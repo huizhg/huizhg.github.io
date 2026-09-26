@@ -170,14 +170,14 @@ const sceneWidth = { walk: 120, chase: 186, play: 150, lounge: 132 }[activity];
   @keyframes nod{0%,58%{transform:rotate(0)}66%{transform:rotate(12deg)}74%{transform:rotate(-5deg)}80%{transform:rotate(9deg)}90%{transform:rotate(-3deg)}100%{transform:rotate(0)}}
 
   /* hover or keyboard focus: stop, look up, show the label */
-  .cat-track .walker:is(:hover,:focus-within),.cat-track .walker:is(:hover,:focus-within) :global(*){animation-play-state:paused}
-  .cat-track .walker:is(:hover,:focus-within) :global(.leg){animation:none}
-  .cat-track .walker:is(:hover,:focus-within) :global(.head){transform:rotate(-12deg)}
+  .cat-track .walker:is(:hover,:has(:focus-visible)),.cat-track .walker:is(:hover,:has(:focus-visible)) :global(*){animation-play-state:paused}
+  .cat-track .walker:is(:hover,:has(:focus-visible)) :global(.leg){animation:none}
+  .cat-track .walker:is(:hover,:has(:focus-visible)) :global(.head){transform:rotate(-12deg)}
   .tip{display:none;position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);white-space:nowrap;padding:4px 8px;border-radius:4px;background:#1C1B19;color:#FAF8F3;font:12px/1.3 var(--mono)}
-  .walker:is(:hover,:focus-within) .tip{display:block}
+  .walker:is(:hover,:has(:focus-visible)) .tip{display:block}
   .hop{animation:hop .45s ease-out}
   /* the hover pause above would otherwise freeze the hop until the pointer and focus leave */
-  .cat-track .walker:is(:hover,:focus-within) .hop{animation-play-state:running}
+  .cat-track .walker:is(:hover,:has(:focus-visible)) .hop{animation-play-state:running}
   @keyframes hop{0%{transform:translateY(0)}40%{transform:translateY(-18px)}100%{transform:translateY(0)}}
   .sleeper{display:none;position:absolute;right:0;bottom:0;align-items:flex-end;gap:2px}
   .sleeper svg{width:var(--cat-w);height:auto}
