@@ -1,0 +1,52 @@
+---
+// The standing tabby cat from design-kit/reference/tabby-cat.svg (viewBox 0 0 120 74), without
+// its <svg> wrapper so scenes can add things around it. Animated by HeaderCat.astro:
+// .leg-a / .leg-b (swing around the top of each leg), .tail (sways around 27,38), .head (tilts around 88,40).
+interface Props {
+  /** Mark the near front leg as the paw that bats at a toy. */
+  bat?: boolean;
+  /** Render only the head (used by the lying-down pose). */
+  headOnly?: boolean;
+}
+const { bat = false, headOnly = false } = Astro.props;
+---
+
+{!headOnly && (
+<Fragment>
+
+<g transform="translate(36 48)"><g class="leg leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+<g transform="translate(80 48)"><g class="leg leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+<g class="tail" fill="none">
+  <path d="M27 38 C 12 34, 8 20, 16 10" stroke="#3B2A1E" stroke-width="9"/>
+  <path d="M27 38 C 12 34, 8 20, 16 10" stroke="#D9A066" stroke-width="5.6"/>
+  <path d="M27 38 C 12 34, 8 20, 16 10" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"/>
+</g>
+<ellipse cx="56" cy="44" rx="32" ry="16" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+<ellipse cx="58" cy="53" rx="22" ry="5.5" fill="#F1D2A6"/>
+<g fill="none" stroke="#8A5A2B" stroke-width="3">
+  <path d="M36 31 q2 6 0 11"/><path d="M46 28.5 q2 7 0 13"/><path d="M56 28 q2 7 0 13"/>
+  <path d="M66 28.5 q2 7 0 12"/><path d="M76 31 q1.5 5 0 9"/>
+</g>
+<g transform="translate(30 48)"><g class="leg leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+<g transform="translate(74 48)"><g class:list={['leg leg-b', { paw: bat }]}><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+</Fragment>
+)}
+<g class="head">
+  <path d="M81 21 L84 5 L93 15 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <path d="M97 15 L106 5 L107 22 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <path d="M84.5 17 L85.6 9.5 L90 14.5 Z" fill="#E7A7A0"/>
+  <path d="M99.5 14.5 L104.5 9.5 L105 18.5 Z" fill="#E7A7A0"/>
+  <circle cx="92" cy="28" r="15" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <ellipse cx="101" cy="33" rx="7" ry="5" fill="#F1D2A6"/>
+  <g fill="none" stroke="#8A5A2B" stroke-width="2">
+    <path d="M87 15 l1.5 6"/><path d="M92 13.5 l0 6.5"/><path d="M97 15 l-1 5"/>
+    <path d="M79.5 27 l5 1"/><path d="M79.5 31.5 l5 0"/>
+  </g>
+  <ellipse cx="97" cy="26" rx="2.4" ry="3" fill="#2A1E16"/>
+  <circle cx="97.8" cy="25" r="0.9" fill="#FFFFFF"/>
+  <circle cx="106" cy="30.5" r="1.6" fill="#D98C8C"/>
+  <path d="M105.5 33 q-1.5 2 -3.5 0.5" fill="none" stroke="#3B2A1E" stroke-width="1"/>
+  <g stroke="#3B2A1E" stroke-width="0.8" opacity="0.6"><path d="M104 33 L117 31"/><path d="M104 34 L117 36"/><path d="M96 34 L86 33.5"/><path d="M96 35 L86 38.5"/></g>
+  <path d="M80 38 q7 6 15 3" fill="none" stroke="#1F5C5A" stroke-width="3"/>
+  <circle cx="88" cy="42.5" r="1.8" fill="#E0B84C" stroke="#3B2A1E" stroke-width="0.6"/>
+</g>

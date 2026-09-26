@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { site } from '../../../content/site';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { getPosts, groupByYear } from '../../lib/posts';
+
+const posts = await getPosts();
+const years = groupByYear(posts, (post) => post.data.date.getUTCFullYear());
+---
+
+<BaseLayout title="Blog" description={`Notes on adversarial machine learning and mechanistic interpretability by ${site.name}.`} current="blog">
+  <main class="column page">
+    <h1 class="section-title">Blog</h1>
+    {
+      years.length > 0 ? (
+        years.map(([year, items]) => (
+          <section class="year" aria-labelledby={`y${year}`}>
+            <h2 id={`y${year}`} class="year-heading">{year}</h2>
+            <div class="cards">
+              {items.map((post) => (
+                <PostCard post={post} />
+              ))}
+            </div>
+          </section>
+        ))
+      ) : (
+        <p class="empty-note">Posts coming soon.</p>
+      )
+    }
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  .page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding-top: 64px;
+    padding-bottom: 72px;
+    text-align: center;
+  }
+  .year {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+</style>

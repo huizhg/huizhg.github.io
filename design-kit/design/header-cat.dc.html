@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Header cat prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;family=Source+Sans+3:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400&amp;display=swap">
+<style>
+body{margin:0;background:#FAF8F3;font-family:'Source Sans 3',sans-serif;color:#1C1B19}
+a{color:#1F5C5A;text-decoration:none}a:hover{color:#123B3A;text-decoration:underline}
+.kz-walker{position:absolute;left:0;bottom:0;animation-name:kz-walk;animation-timing-function:linear;animation-iteration-count:infinite}
+.kz-flip{animation-name:kz-turn;animation-timing-function:linear;animation-iteration-count:infinite;transform-origin:50% 50%}
+.kz-walker.is-sitting,.is-sitting .kz-flip{animation-play-state:paused}
+.kz-off{display:none}
+@keyframes kz-walk{0%{transform:translateX(0)}50%{transform:translateX(var(--kz-travel))}100%{transform:translateX(0)}}
+@keyframes kz-turn{0%,49.99%{transform:scaleX(1)}50%,100%{transform:scaleX(-1)}}
+.kz-leg{transform-box:fill-box;transform-origin:50% 0}
+.kz-leg-a{animation:kz-swing .46s ease-in-out infinite alternate}
+.kz-leg-b{animation:kz-swing .46s ease-in-out infinite alternate-reverse}
+@keyframes kz-swing{from{transform:rotate(20deg)}to{transform:rotate(-20deg)}}
+.is-sitting .kz-leg{animation:none}
+.kz-tail{transform-box:view-box;transform-origin:27px 38px;animation:kz-sway 1.4s ease-in-out infinite alternate}
+@keyframes kz-sway{from{transform:rotate(-9deg)}to{transform:rotate(7deg)}}
+.kz-head{transform-box:view-box;transform-origin:88px 40px;transition:transform .3s ease}
+.is-sitting .kz-head{transform:rotate(-12deg)}
+.kz-btn{display:block;padding:6px 4px 0;margin:0;border:0;background:transparent;cursor:pointer;line-height:0}
+.kz-btn:focus-visible{outline:2px solid #1F5C5A;outline-offset:2px;border-radius:4px}
+.kz-hop{animation:kz-hop .45s ease-out}
+@keyframes kz-hop{0%{transform:translateY(0)}40%{transform:translateY(-18px)}100%{transform:translateY(0)}}
+.kz-sleep{display:none}
+.kz-sleep.on{display:flex}
+.kz-breathe{transform-box:fill-box;transform-origin:50% 100%;animation:kz-breathe 2.8s ease-in-out infinite}
+@keyframes kz-breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.04)}}
+@media (prefers-reduced-motion: reduce){.kz-walker{display:none}.kz-sleep{display:flex}.kz-breathe{animation:none}}
+</style>
+</helmet>
+<div style="width: 1280px; height: 480px; box-sizing: border-box; background: #FAF8F3; color: #1C1B19; overflow: hidden; padding: 0 160px; display: flex; flex-direction: column;">
+
+<header style="position: relative; display: flex; justify-content: space-between; align-items: center; padding: 40px 0 56px; border-bottom: 1px solid #E4DFD4;">
+<a href="#" style="font-family: 'Newsreader', serif; font-size: 22px; font-weight: 500; color: #1C1B19;">Kayla Zhang</a>
+<nav style="display: flex; gap: 32px; align-items: center; font-size: 16px;">
+<a href="#" style="color: #1C1B19; font-weight: 600;">Home</a>
+<a href="#" style="color: #5E5A52;">Blog</a>
+<a href="#" style="color: #5E5A52;">Publications</a>
+<a href="#" style="color: #5E5A52;">CV</a>
+<button aria-label="Switch to dark mode" style="width: 44px; height: 44px; border: 1px solid #E4DFD4; border-radius: 22px; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5E5A52;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></button>
+</nav>
+
+<div class="{{walkerClass}}" style="animation-duration: {{dur}}; --kz-travel: {{travel}}px;">
+<sc-if value="{{showLabel}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; left: 50%; bottom: {{labelBottom}}px; transform: translateX(-50%); white-space: nowrap; padding: 4px 8px; border-radius: 4px; background: #1C1B19; color: #FAF8F3; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.3;">tabby cat 0.03 · guacamole 0.97</span>
+</sc-if>
+<div class="{{catClass}}">
+<div class="kz-flip" style="animation-duration: {{dur}};">
+<button class="kz-btn" aria-label="Pet the cat" onClick="{{hop}}" onMouseEnter="{{sit}}" onMouseLeave="{{stand}}" onFocus="{{sit}}" onBlur="{{stand}}">
+<svg width="{{cw}}" height="{{ch}}" viewBox="0 0 120 74" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(36 48)"><g class="kz-leg kz-leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g transform="translate(80 48)"><g class="kz-leg kz-leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g class="kz-tail" fill="none">
+<path d="M27 38 C 12 34, 8 20, 16 10" stroke="#3B2A1E" stroke-width="9"></path>
+<path d="M27 38 C 12 34, 8 20, 16 10" stroke="#D9A066" stroke-width="5.6"></path>
+<path d="M27 38 C 12 34, 8 20, 16 10" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"></path>
+</g>
+<ellipse cx="56" cy="44" rx="32" ry="16" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></ellipse>
+<ellipse cx="58" cy="53" rx="22" ry="5.5" fill="#F1D2A6"></ellipse>
+<g fill="none" stroke="#8A5A2B" stroke-width="3">
+<path d="M36 31 q2 6 0 11"></path>
+<path d="M46 28.5 q2 7 0 13"></path>
+<path d="M56 28 q2 7 0 13"></path>
+<path d="M66 28.5 q2 7 0 12"></path>
+<path d="M76 31 q1.5 5 0 9"></path>
+</g>
+<g transform="translate(30 48)"><g class="kz-leg kz-leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g transform="translate(74 48)"><g class="kz-leg kz-leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g class="kz-head">
+<path d="M81 21 L84 5 L93 15 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></path>
+<path d="M97 15 L106 5 L107 22 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></path>
+<path d="M84.5 17 L85.6 9.5 L90 14.5 Z" fill="#E7A7A0"></path>
+<path d="M99.5 14.5 L104.5 9.5 L105 18.5 Z" fill="#E7A7A0"></path>
+<circle cx="92" cy="28" r="15" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></circle>
+<ellipse cx="101" cy="33" rx="7" ry="5" fill="#F1D2A6"></ellipse>
+<g fill="none" stroke="#8A5A2B" stroke-width="2">
+<path d="M87 15 l1.5 6"></path>
+<path d="M92 13.5 l0 6.5"></path>
+<path d="M97 15 l-1 5"></path>
+<path d="M79.5 27 l5 1"></path>
+<path d="M79.5 31.5 l5 0"></path>
+</g>
+<ellipse cx="97" cy="26" rx="2.4" ry="3" fill="#2A1E16"></ellipse>
+<circle cx="97.8" cy="25" r="0.9" fill="#FFFFFF"></circle>
+<circle cx="106" cy="30.5" r="1.6" fill="#D98C8C"></circle>
+<path d="M105.5 33 q-1.5 2 -3.5 0.5" fill="none" stroke="#3B2A1E" stroke-width="1"></path>
+<g stroke="#3B2A1E" stroke-width="0.8" opacity="0.6">
+<path d="M104 33 L117 31"></path>
+<path d="M104 34 L117 36"></path>
+</g>
+<path d="M80 38 q7 6 15 3" fill="none" stroke="#1F5C5A" stroke-width="3"></path>
+<circle cx="88" cy="42.5" r="1.8" fill="#E0B84C" stroke="#3B2A1E" stroke-width="0.6"></circle>
+</g>
+</svg>
+</button>
+</div>
+</div>
+</div>
+
+<div class="{{sleepClass}}" style="position: absolute; right: 8px; bottom: 0; align-items: flex-end; gap: 2px;">
+<svg width="{{cw}}" height="{{ch}}" viewBox="0 0 120 74" role="img" aria-label="A tabby cat sleeping" stroke-linecap="round" stroke-linejoin="round">
+<g class="kz-breathe">
+<ellipse cx="56" cy="55" rx="36" ry="18" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></ellipse>
+<g fill="none" stroke="#8A5A2B" stroke-width="3">
+<path d="M36 40 q3 6 1 12"></path>
+<path d="M48 37.5 q2 7 0 12"></path>
+<path d="M60 37.5 q-1 7 -2 12"></path>
+</g>
+</g>
+<path d="M22 60 Q 48 76 80 68" fill="none" stroke="#3B2A1E" stroke-width="9"></path>
+<path d="M22 60 Q 48 76 80 68" fill="none" stroke="#D9A066" stroke-width="5.6"></path>
+<path d="M22 60 Q 48 76 80 68" fill="none" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"></path>
+<path d="M78 45 L80 31 L88 40 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></path>
+<path d="M93 40 L101 31 L102 46 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></path>
+<circle cx="89" cy="53" r="14" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></circle>
+<ellipse cx="97" cy="58" rx="6" ry="4" fill="#F1D2A6"></ellipse>
+<path d="M88 51 q3 2.5 6 0" fill="none" stroke="#3B2A1E" stroke-width="1.5"></path>
+<circle cx="101.5" cy="56" r="1.4" fill="#D98C8C"></circle>
+<path d="M85 41 l1 5" fill="none" stroke="#8A5A2B" stroke-width="2"></path>
+<path d="M90 40 l0 5.5" fill="none" stroke="#8A5A2B" stroke-width="2"></path>
+</svg>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E5A52; padding-bottom: 36px;">z z</span>
+</div>
+</header>
+
+<section style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; padding-top: 48px; text-align: center;">
+<div style="width: 188px; height: 188px; border-radius: 94px; background: #EFEBE2; border: 1px dashed #BDB5A6; box-shadow: 0 0 0 6px #FAF8F3, 0 0 0 7px #D9D3C6; display: flex; align-items: center; justify-content: center; color: #5E5A52; font-size: 14px;">Your photo</div>
+<h1 style="margin: 12px 0 0; font-family: 'Newsreader', serif; font-size: 56px; font-weight: 500; line-height: 1.05; letter-spacing: -1px;">Kayla Zhang</h1>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"speed":{"editor":"range","default":44,"min":20,"max":80,"step":2,"unit":"s","section":"Cat"},"size":{"editor":"range","default":64,"min":48,"max":88,"step":4,"unit":"px","section":"Cat"},"reduceMotion":{"editor":"boolean","default":false,"section":"Cat"},"$preview":{"width":1280,"height":480}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { sitting: false, hopping: false };
+}
+componentWillUnmount() {
+clearTimeout(this.hopTimer);
+}
+renderVals() {
+const w = this.props.size ?? 64;
+const h = Math.round(w * 74 / 120);
+const speed = this.props.speed ?? 44;
+const travel = 960 - (w + 8);
+const reduce = !!this.props.reduceMotion;
+const s = this.state;
+return {
+cw: w,
+ch: h,
+dur: speed + 's',
+travel: travel,
+walkerClass: 'kz-walker' + (s.sitting ? ' is-sitting' : '') + (reduce ? ' kz-off' : ''),
+catClass: s.hopping ? 'kz-hop' : '',
+sleepClass: 'kz-sleep' + (reduce ? ' on' : ''),
+showLabel: s.sitting,
+labelBottom: h + 14,
+sit: () => this.setState({ sitting: true }),
+stand: () => this.setState({ sitting: false }),
+hop: () => {
+clearTimeout(this.hopTimer);
+this.setState({ hopping: false }, () => {
+requestAnimationFrame(() => {
+this.setState({ hopping: true });
+this.hopTimer = setTimeout(() => this.setState({ hopping: false }), 460);
+});
+});
+}
+};
+}
+}
+</script>
+</body>
+</html>

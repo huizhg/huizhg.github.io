@@ -1,0 +1,144 @@
+---
+import 'katex/dist/katex.min.css';
+import '../styles/prose.css';
+import katexMainUrl from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
+import katexMathUrl from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
+import BaseLayout from './BaseLayout.astro';
+import { site } from '../../content/site';
+import { formatDate, readingTime, type Post } from '../lib/posts';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { title, description, date, draft, references } = post.data;
+const year = new Date().getFullYear();
+---
+
+<BaseLayout title={title} description={description} current="blog" headerMode="reading" ogType="article" publishedTime={date}>
+  <Fragment slot="head">
+    <link rel="preload" href={katexMainUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={katexMathUrl} as="font" type="font/woff2" crossorigin />
+  </Fragment>
+  <main>
+    <article id="article" class="post">
+      <header class="post-head">
+        <h1>{title}</h1>
+        <p class="meta">
+          <time datetime={date.toISOString().slice(0, 10)}>{formatDate(date)}</time> · {readingTime(post.body)} min · {site.name}{draft && ' · Draft'}
+        </p>
+      </header>
+
+      <div class="prose">
+        <slot />
+      </div>
+
+      {
+        references.length > 0 && (
+          <section class="references" aria-labelledby="references-title">
+            <h2 id="references-title">References</h2>
+            <ol>
+              {references.map((ref) => (
+                <li>{ref}</li>
+              ))}
+            </ol>
+          </section>
+        )
+      }
+
+      <footer class="post-foot">
+        <a href="/blog/">Back to all posts</a>
+        <span>© {year} {site.name}</span>
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  main {
+    flex: 1;
+  }
+  .post {
+    max-width: 712px;
+    margin: 0 auto;
+    padding: 72px 16px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.7;
+  }
+  .post-head {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 20px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 46px;
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.5px;
+  }
+  .meta {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .references {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .references h2 {
+    margin: 28px 0 0;
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  .references ol {
+    margin: 0;
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .post-foot {
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: var(--sans);
+    font-size: 16px;
+  }
+  .post-foot span {
+    color: var(--muted);
+  }
+  .post-foot a {
+    padding: 12px 0;
+    margin: -12px 0;
+  }
+  @media (max-width: 640px) {
+    .post {
+      padding-top: 48px;
+      font-size: 18px;
+    }
+    h1 {
+      font-size: 34px;
+    }
+    .references h2 {
+      font-size: 25px;
+    }
+  }
+</style>

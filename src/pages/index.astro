@@ -1,0 +1,243 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import PubEntry from '../components/PubEntry.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { site } from '../../content/site';
+import { hasPhoto } from '../lib/photo';
+import { getPosts } from '../lib/posts';
+import { getPublications } from '../lib/publications';
+
+const posts = (await getPosts()).slice(0, 3);
+const selected = (await getPublications()).filter((pub) => pub.data.selected);
+---
+
+<BaseLayout current="home">
+  <main>
+    <section class="intro">
+      <div class="intro-body">
+        {
+          hasPhoto ? (
+            <img class="photo" src={site.photo} alt={`Portrait of ${site.name}`} width="188" height="188" fetchpriority="high" />
+          ) : (
+            <div class="photo photo-placeholder" aria-hidden="true" />
+          )
+        }
+        <h1 class="name">
+          {/* Wrap only between words, never at the hyphen. */}
+          {site.name.split(' ').map((word, i) => (
+            <>
+              {i > 0 && ' '}
+              <span class="word">{word}</span>
+            </>
+          ))}
+        </h1>
+        <p class="role">{site.role.replaceAll(" · ", "\u00a0· ")}</p>
+        <p class="bio">{site.bio}</p>
+        <div class="social">
+          <a href={site.links.scholar} aria-label="Google Scholar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path></svg>
+          </a>
+          <a href={site.links.linkedin} aria-label="LinkedIn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.806 1.637-1.656 3.370-1.656 3.601 0 4.267 2.370 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.140 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.200 24 24 23.227 24 22.271V1.729C24 .774 23.200 0 22.222 0h.003z"></path></svg>
+          </a>
+          <a href={site.links.github} aria-label="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.070 3.633 17.700 3.633 17.700c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.070 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.760-1.605-2.665-.3-5.466-1.332-5.466-5.930 0-1.310.465-2.380 1.235-3.220-.135-.303-.540-1.523.105-3.176 0 0 1.005-.322 3.300 1.230.960-.267 1.980-.399 3.000-.405 1.020.006 2.040.138 3.000.405 2.280-1.552 3.285-1.230 3.285-1.230.645 1.653.240 2.873.120 3.176.765.840 1.230 1.910 1.230 3.220 0 4.610-2.805 5.625-5.475 5.920.420.360.810 1.096.810 2.220 0 1.606-.015 2.896-.015 3.286 0 .315.210.690.825.570C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path></svg>
+          </a>
+        </div>
+      </div>
+      <a class="scroll-cue" href="#blog">
+        <span>Blog and publications</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </a>
+    </section>
+
+    <section id="blog" class="screen" aria-labelledby="blog-title">
+      <div class="column screen-body">
+        <h2 id="blog-title" class="section-title">Blog</h2>
+        {
+          posts.length > 0 ? (
+            <div class="cards">
+              {posts.map((post) => (
+                <PostCard post={post} />
+              ))}
+            </div>
+          ) : (
+            <p class="empty-note">Posts coming soon.</p>
+          )
+        }
+        <a class="more-link" href="/blog/">All posts</a>
+      </div>
+      <a class="scroll-cue" href="#publications">
+        <span>Publications</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </a>
+    </section>
+
+    <section id="publications" class="screen" aria-labelledby="pubs-title">
+      <div class="column screen-body">
+        <h2 id="pubs-title" class="section-title">Publications</h2>
+        <div class="pub-list">
+          {selected.map((pub) => <PubEntry pub={pub} />)}
+        </div>
+        <a class="more-link" href="/publications/">Full list</a>
+      </div>
+      <a class="scroll-cue" href="#projects">
+        <span>Projects</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </a>
+    </section>
+
+    <section id="projects" class="screen" aria-labelledby="projects-title">
+      <div class="column screen-body">
+        <h2 id="projects-title" class="section-title">Projects</h2>
+        <p class="empty-note">Coming soon.</p>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  main {
+    flex: 1;
+  }
+
+  /* Fills the first screen below the patrol header: 84px bar + 60px cat line,
+     or 24px + two 44px rows + 60px cat line on phones (see SiteHeader.astro). */
+  .intro {
+    min-height: calc(100svh - 144px);
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  .intro-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px 0;
+    text-align: center;
+  }
+  .photo {
+    width: 188px;
+    height: 188px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 6px var(--bg), 0 0 0 7px var(--rule);
+    object-fit: cover;
+  }
+  .photo-placeholder {
+    background: var(--card);
+    border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  }
+  .name {
+    margin: 12px 0 0;
+    font-family: var(--serif);
+    font-size: 56px;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -1px;
+  }
+  .word {
+    white-space: nowrap;
+  }
+  .role {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-wrap: balance;
+    color: var(--accent);
+  }
+  .bio {
+    margin: 4px 0 0;
+    max-width: 620px;
+    font-family: var(--serif);
+    font-size: 21px;
+    line-height: 1.6;
+  }
+  .social {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+  }
+  .social a {
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    border: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-soft);
+  }
+  .social a:hover {
+    color: var(--ink);
+    border-color: var(--muted);
+  }
+  .scroll-cue {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px 32px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .scroll-cue:hover {
+    color: var(--ink);
+  }
+
+  /* Blog and Publications each fill a screen, like the intro. */
+  .screen {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+  }
+  .screen-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding-top: 64px;
+    padding-bottom: 56px;
+  }
+  .cards {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .pub-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+  }
+
+  @media (max-width: 560px) {
+    .intro {
+      min-height: calc(100svh - 172px);
+    }
+  }
+  @media (max-width: 640px) {
+    .name {
+      font-size: 42px;
+    }
+    .bio {
+      font-size: 19px;
+    }
+    .photo {
+      width: 156px;
+      height: 156px;
+    }
+  }
+</style>

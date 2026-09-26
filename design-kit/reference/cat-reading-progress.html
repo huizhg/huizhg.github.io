@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference: reading-progress cat (blog posts)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono&display=swap">
+<style>
+:root{--bg:#FAF8F3;--ink:#1C1B19;--muted:#5E5A52;--rule:#E4DFD4;--accent:#1F5C5A;--code-bg:#F2EEE5;--cat-w:48px}
+@media (prefers-color-scheme: dark){:root{--bg:#151412;--ink:#ECE8DF;--muted:#A39E93;--rule:#2E2B27;--accent:#6FB3AE;--code-bg:#1F1D1A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Source Sans 3',system-ui,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+
+/* sticky header */
+.site-header{position:sticky;top:0;z-index:10;background:var(--bg)}
+.bar{display:flex;justify-content:space-between;align-items:center;padding-top:20px;min-height:64px}
+.brand{white-space:nowrap;font-family:'Newsreader',serif;font-size:22px;font-weight:500;color:var(--ink)}
+nav{display:flex;gap:32px;font-size:16px}
+nav a{color:var(--muted)} nav a[aria-current]{color:var(--ink);font-weight:600}
+
+/* progress line + cat */
+.cat-track{position:relative;height:46px}
+.line{position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--rule)}
+.fill{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--accent);border-radius:1px}
+.cat{position:absolute;left:0;bottom:1px;padding:0 4px;line-height:0;will-change:transform}
+.cat svg{width:var(--cat-w);height:auto;display:block;overflow:visible}
+.flip{transform-origin:50% 50%} .flip.back{transform:scaleX(-1)}
+.leg{transform-box:fill-box;transform-origin:50% 0}
+.walking .leg-a{animation:swing .46s ease-in-out infinite alternate}
+.walking .leg-b{animation:swing .46s ease-in-out infinite alternate-reverse}
+@keyframes swing{from{transform:rotate(20deg)}to{transform:rotate(-20deg)}}
+.tail{transform-box:view-box;transform-origin:27px 38px;animation:sway 1.4s ease-in-out infinite alternate}
+@keyframes sway{from{transform:rotate(-9deg)}to{transform:rotate(7deg)}}
+.tip{display:none;position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;padding:3px 8px;border-radius:4px;background:#1C1B19;color:#FAF8F3;font:12px/1.3 'IBM Plex Mono',monospace}
+.cat:hover .tip{display:block}
+@media (prefers-reduced-motion: reduce){.leg,.tail{animation:none!important}}
+
+/* article */
+article{max-width:680px;margin:0 auto;padding:72px 16px 120px;font:20px/1.7 'Newsreader',serif}
+article h1{font-size:46px;font-weight:500;line-height:1.12;letter-spacing:-.5px;margin:0 0 14px}
+article .meta{font:15px 'Source Sans 3',sans-serif;color:var(--muted);margin:0 0 36px}
+article h2{font-size:30px;font-weight:500;line-height:1.25;margin:48px 0 12px}
+article p{margin:0 0 22px}
+article pre{background:var(--code-bg);padding:20px 24px;border-radius:8px;font:14px/1.6 'IBM Plex Mono',monospace;overflow-x:auto}
+.math{text-align:center;font-style:italic;font-size:22px;padding:8px 0 22px}
+@media (max-width:640px){:root{--cat-w:36px}nav{gap:18px;font-size:15px}.home-link{display:none}.brand{font-size:19px}article h1{font-size:34px}article{font-size:18px}}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <div class="bar">
+      <a class="brand" href="#">Kayla Zhang</a>
+      <nav><a class="home-link" href="#">Home</a><a href="#" aria-current="page">Blog</a><a href="#">Publications</a><a href="#">CV</a></nav>
+    </div>
+    <div class="cat-track" id="track" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="line"></div>
+      <div class="fill" id="fill"></div>
+      <div class="cat" id="cat">
+        <span class="tip" id="tip" aria-hidden="true">0% read</span>
+        <div class="flip" id="flip">
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 74" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(36 48)"><g class="leg leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+  <g transform="translate(80 48)"><g class="leg leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+  <g class="tail" fill="none">
+    <path d="M27 38 C 12 34, 8 20, 16 10" stroke="#3B2A1E" stroke-width="9"/>
+    <path d="M27 38 C 12 34, 8 20, 16 10" stroke="#D9A066" stroke-width="5.6"/>
+    <path d="M27 38 C 12 34, 8 20, 16 10" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"/>
+  </g>
+  <ellipse cx="56" cy="44" rx="32" ry="16" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <ellipse cx="58" cy="53" rx="22" ry="5.5" fill="#F1D2A6"/>
+  <g fill="none" stroke="#8A5A2B" stroke-width="3">
+    <path d="M36 31 q2 6 0 11"/><path d="M46 28.5 q2 7 0 13"/><path d="M56 28 q2 7 0 13"/>
+    <path d="M66 28.5 q2 7 0 12"/><path d="M76 31 q1.5 5 0 9"/>
+  </g>
+  <g transform="translate(30 48)"><g class="leg leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+  <g transform="translate(74 48)"><g class="leg leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/></g></g>
+  <g class="head">
+    <path d="M81 21 L84 5 L93 15 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+    <path d="M97 15 L106 5 L107 22 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+    <path d="M84.5 17 L85.6 9.5 L90 14.5 Z" fill="#E7A7A0"/>
+    <path d="M99.5 14.5 L104.5 9.5 L105 18.5 Z" fill="#E7A7A0"/>
+    <circle cx="92" cy="28" r="15" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+    <ellipse cx="101" cy="33" rx="7" ry="5" fill="#F1D2A6"/>
+    <g fill="none" stroke="#8A5A2B" stroke-width="2">
+      <path d="M87 15 l1.5 6"/><path d="M92 13.5 l0 6.5"/><path d="M97 15 l-1 5"/>
+      <path d="M79.5 27 l5 1"/><path d="M79.5 31.5 l5 0"/>
+    </g>
+    <ellipse cx="97" cy="26" rx="2.4" ry="3" fill="#2A1E16"/>
+    <circle cx="97.8" cy="25" r="0.9" fill="#FFFFFF"/>
+    <circle cx="106" cy="30.5" r="1.6" fill="#D98C8C"/>
+    <path d="M105.5 33 q-1.5 2 -3.5 0.5" fill="none" stroke="#3B2A1E" stroke-width="1"/>
+    <g stroke="#3B2A1E" stroke-width="0.8" opacity="0.6"><path d="M104 33 L117 31"/><path d="M104 34 L117 36"/></g>
+    <path d="M80 38 q7 6 15 3" fill="none" stroke="#1F5C5A" stroke-width="3"/>
+    <circle cx="88" cy="42.5" r="1.8" fill="#E0B84C" stroke="#3B2A1E" stroke-width="0.6"/>
+  </g>
+</svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article id="article">
+  <h1>Why a tabby cat can look like guacamole</h1>
+  <p class="meta">[Month DD, 2026] · 8 min · Kayla Zhang</p>
+  <p>A photo of a tabby cat goes into an image classifier. The model is confident: tabby cat. Change every pixel by an amount too small for you to see, and the same model now says guacamole, with even higher confidence.</p>
+  <p>This is an adversarial example. It is not a bug in one model. It shows up across architectures, datasets and training recipes, and it tells us something uncomfortable about what these models actually learn.</p>
+  <h2>What is an adversarial example?</h2>
+  <p>Take an input x that the model classifies correctly. An adversarial example is a nearby input x′ that the model gets wrong. "Nearby" usually means every pixel moves by at most a small budget ε:</p>
+  <div class="math">‖x′ − x‖<sub>∞</sub> ≤ ε</div>
+  <p>With ε = 8/255, the change is invisible on a normal screen. For an undefended classifier, it is almost always enough.</p>
+  <h2>The simplest attack: FGSM</h2>
+  <p>The fast gradient sign method takes one step in the direction that increases the loss the most, per pixel:</p>
+  <div class="math">x′ = x + ε · sign(∇<sub>x</sub> L(θ, x, y))</div>
+  <pre>def fgsm(model, x, y, eps):
+    x = x.clone().requires_grad_(True)
+    loss = F.cross_entropy(model(x), y)
+    loss.backward()
+    return (x + eps * x.grad.sign()).clamp(0, 1)</pre>
+  <h2>Why this matters for vision-language models</h2>
+  <p>Vision-language models inherit their image encoders from the same family of vision models. A perturbation that steers the encoder can steer everything downstream: the caption, the answer, even whether the model follows its safety training.</p>
+  <p>That is the question my research asks from the inside. Which internal features does the perturbation move, and why does moving them change the output so much?</p>
+  <p style="height:600px"></p>
+</article>
+
+<script>
+// Cat position = how far through the ARTICLE the reader is (0 at its top, 1 when its end reaches the bottom of the screen).
+const track = document.getElementById('track');
+const fill = document.getElementById('fill');
+const cat = document.getElementById('cat');
+const flip = document.getElementById('flip');
+const tip = document.getElementById('tip');
+const article = document.getElementById('article');
+let last = 0, stopTimer = 0, queued = false;
+
+function progress() {
+  const start = article.offsetTop;
+  const end = article.offsetTop + article.offsetHeight - window.innerHeight;
+  if (end <= start) return 1;
+  return Math.min(1, Math.max(0, (window.scrollY - start) / (end - start)));
+}
+function render() {
+  queued = false;
+  const p = progress();
+  const travel = track.clientWidth - cat.offsetWidth;
+  const x = p * travel;
+  cat.style.transform = `translateX(${x}px)`;
+  fill.style.width = (x + cat.offsetWidth / 2) + 'px';
+  if (p < last) flip.classList.add('back'); else if (p > last) flip.classList.remove('back');
+  last = p;
+  const pct = Math.round(p * 100);
+  tip.textContent = pct + '% read';
+  track.setAttribute('aria-valuenow', pct);
+}
+window.addEventListener('scroll', () => {
+  cat.classList.add('walking');
+  clearTimeout(stopTimer);
+  stopTimer = setTimeout(() => cat.classList.remove('walking'), 180);
+  if (!queued) { queued = true; requestAnimationFrame(render); }
+}, { passive: true });
+window.addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>

@@ -1,17 +1,16 @@
-_site
-.bundle
-.DS_store
-.idea
-.jekyll-cache
-.jekyll-metadata
-.ruby-version
-.sass-cache
-.tweet-cache
-.venv
-assets/libs/
-assets/rendercv/rendercv_output/*.typ
-al-folio-upgrade-report.md
+# build output
+dist/
+.astro/
+
+# dependencies
 node_modules/
-output/playwright/
-test-results/
-vendor
+
+# logs and local env
+npm-debug.log*
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

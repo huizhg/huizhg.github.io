@@ -1,0 +1,151 @@
+---
+import HeaderCat, { type Activity } from './HeaderCat.astro';
+import ReadingCat from './ReadingCat.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { site } from '../../content/site';
+
+interface Props {
+  current?: 'home' | 'blog' | 'publications' | 'projects';
+  mode?: 'patrol' | 'reading';
+}
+
+const { current, mode = 'patrol' } = Astro.props;
+
+const links = [
+  { key: 'home', href: '/', label: 'Home', className: 'home-link' },
+  { key: 'blog', href: '/blog/', label: 'Blog' },
+  { key: 'publications', href: '/publications/', label: 'Publications' },
+  { key: 'projects', href: '/projects/', label: 'Projects' },
+  { key: 'cv', href: site.cv, label: 'CV' },
+];
+
+// What the cat is doing on each section's pages (see HeaderCat.astro).
+const activities: Record<string, Activity> = { blog: 'chase', publications: 'play', projects: 'lounge' };
+const activity = activities[current ?? ''] ?? 'walk';
+
+// "page" on the section's own page; "true" inside the section (e.g. Blog while reading a post).
+const ariaCurrent = (key: string, href: string) =>
+  key === current ? (Astro.url.pathname === href ? 'page' : 'true') : undefined;
+---
+
+<header class:list={['site-header', { sticky: mode === 'reading' }]}>
+  <div class="wrap">
+    <div class:list={['bar', mode]}>
+      <a class="brand" href="/">{site.name}</a>
+      <div class="actions">
+        <nav aria-label="Main">
+          {
+            links.map((link) => (
+              <a class={link.className} href={link.href} aria-current={ariaCurrent(link.key, link.href)}>
+                {link.label}
+              </a>
+            ))
+          }
+        </nav>
+        <ThemeToggle />
+      </div>
+    </div>
+    {mode === 'reading' ? <ReadingCat /> : <HeaderCat activity={activity} />}
+  </div>
+</header>
+
+<style>
+  .sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+  }
+  .wrap {
+    max-width: 992px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+  .bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .bar.patrol {
+    padding-top: 40px;
+    min-height: 84px;
+  }
+  .bar.reading {
+    padding-top: 20px;
+    min-height: 64px;
+  }
+  .brand {
+    white-space: nowrap;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .actions,
+  nav {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+  nav {
+    font-size: 16px;
+  }
+  nav a {
+    padding: 12px 0;
+    line-height: 20px;
+    color: var(--muted);
+  }
+  nav a[aria-current] {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .brand:hover,
+  nav a:hover {
+    color: var(--ink);
+  }
+  @media (max-width: 720px) {
+    .actions,
+    nav {
+      gap: 24px;
+    }
+  }
+  @media (max-width: 640px) {
+    .actions,
+    nav {
+      gap: 18px;
+    }
+    nav {
+      font-size: 15px;
+    }
+    .home-link {
+      display: none;
+    }
+    .brand {
+      font-size: 19px;
+    }
+  }
+  /* Phones: name and theme button on the first row, the links on a second row. */
+  @media (max-width: 560px) {
+    .bar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+    .bar.patrol {
+      padding-top: 24px;
+    }
+    .bar.reading {
+      padding-top: 12px;
+    }
+    .actions {
+      display: contents;
+    }
+    nav {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      flex-wrap: wrap;
+      column-gap: 18px;
+      row-gap: 0;
+    }
+  }
+</style>

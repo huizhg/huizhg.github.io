@@ -1,0 +1,67 @@
+<button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--rule);
+    border-radius: 22px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .theme-toggle:hover {
+    color: var(--ink);
+  }
+</style>
+
+<script>
+  // The head script in BaseLayout sets data-theme before first paint. This keeps it in sync.
+  const KEY = 'theme';
+  const root = document.documentElement;
+  const system = matchMedia('(prefers-color-scheme: dark)');
+
+  const stored = () => {
+    try {
+      return localStorage.getItem(KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const syncLabels = () => {
+    const dark = root.dataset.theme === 'dark';
+    for (const button of document.querySelectorAll('[data-theme-toggle]')) {
+      button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+  };
+
+  for (const button of document.querySelectorAll('[data-theme-toggle]')) {
+    button.addEventListener('click', () => {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem(KEY, next);
+      } catch {}
+      syncLabels();
+    });
+  }
+
+  // Without a saved choice, keep following the system setting.
+  system.addEventListener('change', (event) => {
+    if (stored()) return;
+    root.dataset.theme = event.matches ? 'dark' : 'light';
+    syncLabels();
+  });
+
+  syncLabels();
+</script>

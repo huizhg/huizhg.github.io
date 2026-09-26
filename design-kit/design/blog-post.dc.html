@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blog post with reading-progress cat</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;family=Source+Sans+3:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400&amp;display=swap">
+<style>
+body{margin:0;background:#FAF8F3;font-family:'Source Sans 3',sans-serif;color:#1C1B19}
+a{color:#1F5C5A;text-decoration:none}a:hover{color:#123B3A;text-decoration:underline}
+.bp-cat{position:absolute;left:0;bottom:1px;transition:transform .15s linear}
+.bp-flip{transform-origin:50% 50%}
+.bp-flip.is-back{transform:scaleX(-1)}
+.kz-leg{transform-box:fill-box;transform-origin:50% 0}
+.is-walking .kz-leg-a{animation:kz-swing .46s ease-in-out infinite alternate}
+.is-walking .kz-leg-b{animation:kz-swing .46s ease-in-out infinite alternate-reverse}
+@keyframes kz-swing{from{transform:rotate(20deg)}to{transform:rotate(-20deg)}}
+.kz-tail{transform-box:view-box;transform-origin:27px 38px;animation:kz-sway 1.4s ease-in-out infinite alternate}
+@keyframes kz-sway{from{transform:rotate(-9deg)}to{transform:rotate(7deg)}}
+.bp-tip{display:none}
+.bp-cat:hover .bp-tip{display:block}
+.bp-scroll::-webkit-scrollbar{width:10px}
+.bp-scroll::-webkit-scrollbar-thumb{background:#D9D3C6;border-radius:5px}
+@media (prefers-reduced-motion: reduce){.kz-leg,.kz-tail{animation:none !important}.bp-cat{transition:none}}
+</style>
+</helmet>
+<div style="width: 1280px; height: 900px; box-sizing: border-box; background: #FAF8F3; color: #1C1B19; display: flex; flex-direction: column; overflow: hidden;">
+
+<header style="flex-shrink: 0; padding: 20px 160px 0; background: #FAF8F3; display: flex; flex-direction: column;">
+<div style="display: flex; justify-content: space-between; align-items: center; height: 44px;">
+<a href="Main.dc.html" style="font-family: 'Newsreader', serif; font-size: 22px; font-weight: 500; color: #1C1B19;">Kayla Zhang</a>
+<nav style="display: flex; gap: 32px; align-items: center; font-size: 16px;">
+<a href="Main.dc.html" style="color: #5E5A52;">Home</a>
+<a href="#" style="color: #1C1B19; font-weight: 600;">Blog</a>
+<a href="#" style="color: #5E5A52;">Publications</a>
+<a href="#" style="color: #5E5A52;">CV</a>
+<button aria-label="Switch to dark mode" style="width: 44px; height: 44px; border: 1px solid #E4DFD4; border-radius: 22px; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5E5A52;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></button>
+</nav>
+</div>
+
+<div role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{pct}}" style="position: relative; height: 46px;">
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: #E4DFD4;"></div>
+<div style="position: absolute; left: 0; bottom: 0; height: 2px; background: #1F5C5A; border-radius: 1px; width: {{fillPx}}px; transition: width .15s linear;"></div>
+<div class="{{catClass}}" style="transform: translateX({{catX}}px);">
+<span class="bp-tip" style="position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 4px; background: #1C1B19; color: #FAF8F3; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.3;">{{pct}}% read</span>
+<div class="{{flipClass}}" style="line-height: 0; padding: 0 4px;">
+<svg width="{{cw}}" height="{{ch}}" viewBox="0 0 120 74" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(36 48)"><g class="kz-leg kz-leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g transform="translate(80 48)"><g class="kz-leg kz-leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g class="kz-tail" fill="none">
+<path d="M27 38 C 12 34, 8 20, 16 10" stroke="#3B2A1E" stroke-width="9"></path>
+<path d="M27 38 C 12 34, 8 20, 16 10" stroke="#D9A066" stroke-width="5.6"></path>
+<path d="M27 38 C 12 34, 8 20, 16 10" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"></path>
+</g>
+<ellipse cx="56" cy="44" rx="32" ry="16" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></ellipse>
+<ellipse cx="58" cy="53" rx="22" ry="5.5" fill="#F1D2A6"></ellipse>
+<g fill="none" stroke="#8A5A2B" stroke-width="3">
+<path d="M36 31 q2 6 0 11"></path>
+<path d="M46 28.5 q2 7 0 13"></path>
+<path d="M56 28 q2 7 0 13"></path>
+<path d="M66 28.5 q2 7 0 12"></path>
+<path d="M76 31 q1.5 5 0 9"></path>
+</g>
+<g transform="translate(30 48)"><g class="kz-leg kz-leg-a"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<g transform="translate(74 48)"><g class="kz-leg kz-leg-b"><rect x="-4" y="0" width="8" height="24" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></rect></g></g>
+<path d="M81 21 L84 5 L93 15 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></path>
+<path d="M97 15 L106 5 L107 22 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></path>
+<path d="M84.5 17 L85.6 9.5 L90 14.5 Z" fill="#E7A7A0"></path>
+<path d="M99.5 14.5 L104.5 9.5 L105 18.5 Z" fill="#E7A7A0"></path>
+<circle cx="92" cy="28" r="15" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"></circle>
+<ellipse cx="101" cy="33" rx="7" ry="5" fill="#F1D2A6"></ellipse>
+<g fill="none" stroke="#8A5A2B" stroke-width="2">
+<path d="M87 15 l1.5 6"></path>
+<path d="M92 13.5 l0 6.5"></path>
+<path d="M97 15 l-1 5"></path>
+<path d="M79.5 27 l5 1"></path>
+<path d="M79.5 31.5 l5 0"></path>
+</g>
+<ellipse cx="97" cy="26" rx="2.4" ry="3" fill="#2A1E16"></ellipse>
+<circle cx="97.8" cy="25" r="0.9" fill="#FFFFFF"></circle>
+<circle cx="106" cy="30.5" r="1.6" fill="#D98C8C"></circle>
+<path d="M105.5 33 q-1.5 2 -3.5 0.5" fill="none" stroke="#3B2A1E" stroke-width="1"></path>
+<path d="M80 38 q7 6 15 3" fill="none" stroke="#1F5C5A" stroke-width="3"></path>
+<circle cx="88" cy="42.5" r="1.8" fill="#E0B84C" stroke="#3B2A1E" stroke-width="0.6"></circle>
+</svg>
+</div>
+</div>
+</div>
+</header>
+
+<div class="bp-scroll" onScroll="{{onScroll}}" style="flex-grow: 1; min-height: 0; overflow-y: auto;">
+<article style="width: 680px; margin: 0 auto; padding: 72px 0 120px; display: flex; flex-direction: column; gap: 22px; font-family: 'Newsreader', serif; font-size: 20px; line-height: 1.7;">
+
+<header style="display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px;">
+<h1 style="margin: 0; font-size: 46px; font-weight: 500; line-height: 1.12; letter-spacing: -0.5px;">Why a tabby cat can look like guacamole</h1>
+<p style="margin: 0; font-family: 'Source Sans 3', sans-serif; font-size: 15px; color: #5E5A52;">[Month DD, 2026] · 8 min · Kayla Zhang</p>
+</header>
+
+<p style="margin: 0;">A photo of a tabby cat goes into an image classifier. The model is confident: tabby cat. Change every pixel by an amount too small for you to see, and the same model now says guacamole, with even higher confidence.</p>
+<p style="margin: 0;">This is an adversarial example. It is not a bug in one model. It shows up across architectures, datasets and training recipes, and it tells us something uncomfortable about what these models actually learn.</p>
+
+<h2 style="margin: 28px 0 0; font-size: 30px; font-weight: 500; line-height: 1.25;">What is an adversarial example?</h2>
+<p style="margin: 0;">Take an input x that the model classifies correctly. An adversarial example is a nearby input x′ that the model gets wrong. "Nearby" usually means every pixel moves by at most a small budget ε:</p>
+<div style="padding: 18px 0; text-align: center; font-style: italic; font-size: 22px;">‖x′ − x‖<sub>∞</sub> ≤ ε</div>
+<p style="margin: 0;">With ε = 8/255, the change is invisible on a normal screen. For an undefended classifier, it is almost always enough.</p>
+
+<h2 style="margin: 28px 0 0; font-size: 30px; font-weight: 500; line-height: 1.25;">The simplest attack: FGSM</h2>
+<p style="margin: 0;">The fast gradient sign method takes one step in the direction that increases the loss the most, per pixel:</p>
+<div style="padding: 18px 0; text-align: center; font-style: italic; font-size: 22px;">x′ = x + ε · sign(∇<sub>x</sub> L(θ, x, y))</div>
+<p style="margin: 0;">In PyTorch it fits in five lines:</p>
+<pre style="margin: 0; padding: 20px 24px; background: #F2EEE5; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.6; white-space: pre; overflow-x: auto;">def fgsm(model, x, y, eps):
+    x = x.clone().requires_grad_(True)
+    loss = F.cross_entropy(model(x), y)
+    loss.backward()
+    return (x + eps * x.grad.sign()).clamp(0, 1)</pre>
+
+<figure style="margin: 12px 0; display: flex; flex-direction: column; gap: 10px;">
+<div style="height: 280px; background: #EFEBE2; border: 1px dashed #BDB5A6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Source Sans 3', sans-serif; font-size: 14px; color: #5E5A52;">[Figure: clean image, perturbation (amplified), adversarial image]</div>
+<figcaption style="font-family: 'Source Sans 3', sans-serif; font-size: 15px; line-height: 1.5; color: #5E5A52;">Fig. 1. [Caption text.]</figcaption>
+</figure>
+
+<h2 style="margin: 28px 0 0; font-size: 30px; font-weight: 500; line-height: 1.25;">Why this matters for vision-language models</h2>
+<p style="margin: 0;">Vision-language models inherit their image encoders from the same family of vision models. A perturbation that steers the encoder can steer everything downstream: the caption, the answer, even whether the model follows its safety training.</p>
+<p style="margin: 0;">That is the question my research asks from the inside. Which internal features does the perturbation move, and why does moving them change the output so much?</p>
+
+<h2 style="margin: 28px 0 0; font-size: 30px; font-weight: 500; line-height: 1.25;">References</h2>
+<ol style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-family: 'Source Sans 3', sans-serif; font-size: 16px; line-height: 1.5; color: #45423C;">
+<li>Szegedy et al. Intriguing properties of neural networks. ICLR 2014.</li>
+<li>Goodfellow, Shlens, Szegedy. Explaining and harnessing adversarial examples. ICLR 2015.</li>
+<li>Athalye, Engstrom, Ilyas, Kwok. Synthesizing robust adversarial examples. ICML 2018.</li>
+</ol>
+
+<div style="margin-top: 40px; padding-top: 28px; border-top: 1px solid #E4DFD4; display: flex; justify-content: space-between; font-family: 'Source Sans 3', sans-serif; font-size: 16px;">
+<a href="Main.dc.html">Back to all posts</a>
+<span style="color: #5E5A52;">© 2026 Kayla Zhang</span>
+</div>
+</article>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { progress: 0, walking: false, back: false };
+}
+componentWillUnmount() {
+clearTimeout(this.stopTimer);
+}
+renderVals() {
+const w = 48;
+const h = Math.round(w * 74 / 120);
+const catW = w + 8;
+const travel = 960 - catW;
+const p = this.state.progress;
+const catX = Math.round(p * travel);
+return {
+cw: w,
+ch: h,
+catX: catX,
+fillPx: Math.min(960, catX + Math.round(catW / 2)),
+pct: Math.round(p * 100),
+catClass: 'bp-cat' + (this.state.walking ? ' is-walking' : ''),
+flipClass: 'bp-flip' + (this.state.back ? ' is-back' : ''),
+onScroll: (e) => {
+const el = e.currentTarget;
+const max = el.scrollHeight - el.clientHeight;
+const next = max > 0 ? Math.min(1, Math.max(0, el.scrollTop / max)) : 0;
+const back = next < this.state.progress ? true : (next > this.state.progress ? false : this.state.back);
+this.setState({ progress: next, walking: true, back: back });
+clearTimeout(this.stopTimer);
+this.stopTimer = setTimeout(() => this.setState({ walking: false }), 180);
+}
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Shared column: 800px of content, 16px gutters on small screens. */
+.column {
+  width: 100%;
+  max-width: 832px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Page heading used where the home page has an H2 (Blog index, Publications). */
+.section-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Small uppercase year label on the Blog and Publications pages. */
+.year-heading {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* "All posts" / "Full list" links under a section. */
+.more-link {
+  font-size: 16px;
+  padding: 10px 0;
+}
+
+.empty-note {
+  margin: 0;
+  font-size: 17px;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .section-title {
+    font-size: 28px;
+  }
+}

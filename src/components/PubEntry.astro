@@ -1,0 +1,126 @@
+---
+import { authorsHtml, type Publication } from '../lib/publications';
+
+interface Props {
+  pub: Publication;
+  /** Visible label of the copy button. */
+  copyLabel?: string;
+}
+
+const { pub, copyLabel = 'BibTeX' } = Astro.props;
+const { title, authors, venue, year, links, bibtex } = pub.data;
+const hasLinks = links.pdf || links.code || bibtex;
+---
+
+<div class="pub" id={pub.id}>
+  <h3 class="pub-title">{title}</h3>
+  <p class="pub-meta">
+    {authors && <Fragment set:html={`${authorsHtml(authors)} · `} />}{venue && <><em>{venue}</em>, </>}{year}
+  </p>
+  {
+    hasLinks && (
+      <p class="pub-links">
+        {links.pdf && <a href={links.pdf}>PDF</a>}
+        {links.code && <a href={links.code}>Code</a>}
+        {bibtex && (
+          <button type="button" class="bib-copy" data-bibtex={bibtex.trim()} data-label={copyLabel}>
+            {copyLabel}
+          </button>
+        )}
+      </p>
+    )
+  }
+</div>
+
+<style>
+  .pub {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  .pub-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+  .pub-meta {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .pub-meta :global(strong) {
+    font-weight: 600;
+  }
+  .pub-links {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  /* 44px tall hit area without changing the spacing. */
+  .pub-links a,
+  .bib-copy {
+    padding: 12px 0;
+    margin: -12px 0;
+  }
+  .bib-copy {
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .bib-copy:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+  let status: HTMLElement | null = null;
+
+  const announce = (message: string) => {
+    if (!status) {
+      status = document.createElement('span');
+      status.className = 'visually-hidden';
+      status.setAttribute('role', 'status');
+      document.body.append(status);
+    }
+    status.textContent = message;
+  };
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.append(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+    }
+  };
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.bib-copy')) {
+    let timer = 0;
+    button.addEventListener('click', async () => {
+      await copy(button.dataset.bibtex ?? '');
+      button.textContent = 'Copied';
+      announce('BibTeX copied to clipboard');
+      clearTimeout(timer);
+      timer = window.setTimeout(() => (button.textContent = button.dataset.label ?? 'BibTeX'), 1600);
+    });
+  }
+</script>

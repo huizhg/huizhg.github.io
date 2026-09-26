@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PubEntry from '../components/PubEntry.astro';
+import { site } from '../../content/site';
+import SiteFooter from '../components/SiteFooter.astro';
+import { groupByYear } from '../lib/posts';
+import { getPublications } from '../lib/publications';
+
+const years = groupByYear(await getPublications(), (pub) => pub.data.year);
+---
+
+<BaseLayout title="Publications" description={`Publications by ${site.name} on adversarial robustness of vision and vision-language models.`} current="publications">
+  <main class="column page">
+    <h1 class="section-title">Publications</h1>
+    {
+      years.map(([year, pubs]) => (
+        <section class="year" aria-labelledby={`y${year}`}>
+          <h2 id={`y${year}`} class="year-heading">{year}</h2>
+          <div class="pub-list">
+            {pubs.map((pub) => (
+              <PubEntry pub={pub} copyLabel="Copy BibTeX" />
+            ))}
+          </div>
+        </section>
+      ))
+    }
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  .page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding-top: 64px;
+    padding-bottom: 72px;
+    text-align: center;
+  }
+  .year {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .pub-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+  }
+</style>

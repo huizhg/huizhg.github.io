@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://huizhg.github.io/sitemap-index.xml

@@ -1,0 +1,224 @@
+---
+// The cat on the line under the header, ported from design-kit/reference/cat-header.html.
+// Each section has its own scene:
+//   walk   (Home, 404)     walks from end to end and back
+//   chase  (Blog)          runs after a mouse, end to end and back
+//   play   (Publications)  bats a ball of yarn
+//   lounge (Projects)      lies down and paws at a flower
+// Speed: --dur (one full round trip). Size: --cat-w (64px, 44px under 640px).
+import CatStanding from './CatStanding.astro';
+
+export type Activity = 'walk' | 'chase' | 'play' | 'lounge';
+
+interface Props {
+  activity?: Activity;
+}
+
+const { activity = 'walk' } = Astro.props;
+const moving = activity === 'walk' || activity === 'chase';
+// Width of each scene's viewBox; the cat itself is 120 wide.
+const sceneWidth = { walk: 120, chase: 186, play: 150, lounge: 132 }[activity];
+---
+
+<div class:list={['cat-track', activity, moving ? 'moving' : 'still']} data-cat-track>
+  <div class="walker" data-cat-walker>
+    <span class="tip" aria-hidden="true">tabby cat 0.03 · guacamole 0.97</span>
+    <div class="flip"><div data-cat-hopper>
+      <button class="cat-btn" type="button" aria-label="Pet the cat" data-cat-button>
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${sceneWidth} 74`} style={`--vbw: ${sceneWidth}`} stroke-linecap="round" stroke-linejoin="round">
+  {activity === 'walk' && <CatStanding />}
+
+  {activity === 'chase' && (
+    <Fragment>
+      <g class="bob"><CatStanding /></g>
+      <g class="mouse"><g class="mouse-bob">
+        <path d="M140 66 C 132 68, 130 60, 122 64" fill="none" stroke="#C99A92" stroke-width="1.8"/>
+        <path class="mleg" d="M150 69 l0 4" stroke="#3B2A1E" stroke-width="2"/>
+        <path class="mleg mleg-b" d="M164 69 l0 4" stroke="#3B2A1E" stroke-width="2"/>
+        <path d="M140 67 C 140 57, 152 52, 162 55 C 169 57, 174 61, 177 66 C 177 69, 172 70, 164 70 L 146 70 C 142 70, 140 69, 140 67 Z" fill="#A8A29A" stroke="#3B2A1E" stroke-width="1.8"/>
+        <circle cx="160" cy="54.5" r="5" fill="#A8A29A" stroke="#3B2A1E" stroke-width="1.6"/>
+        <circle cx="160" cy="54.5" r="2.4" fill="#E7A7A0"/>
+        <circle cx="169" cy="60.5" r="1.4" fill="#2A1E16"/>
+        <circle cx="177.5" cy="66" r="1.5" fill="#D98C8C"/>
+        <g stroke="#3B2A1E" stroke-width="0.6" opacity="0.6"><path d="M174 64 L182 62"/><path d="M174 65.5 L182 66.5"/></g>
+      </g></g>
+    </Fragment>
+  )}
+
+  {activity === 'play' && (
+    <Fragment>
+      <CatStanding bat />
+      <g class="yarn">
+        <path d="M100 71 C 94 73, 90 70, 84 72.5" fill="none" stroke="#C0504D" stroke-width="1.4"/>
+        <g class="yarn-spin">
+          <circle cx="106" cy="65" r="7" fill="#C0504D" stroke="#3B2A1E" stroke-width="1.6"/>
+          <g fill="none" stroke="#E89A8C" stroke-width="1.2">
+            <path d="M100.5 62 q5.5 -3.5 11 0.5"/><path d="M100 66 q6 -4.5 12.5 -0.5"/><path d="M101.5 69.5 q5 -3 9.5 -1"/>
+          </g>
+        </g>
+      </g>
+    </Fragment>
+  )}
+
+  {activity === 'lounge' && (
+    <Fragment>
+      <g class="lounge-tail" fill="none">
+        <path d="M26 64 Q 10 67, 7 54" stroke="#3B2A1E" stroke-width="9"/>
+        <path d="M26 64 Q 10 67, 7 54" stroke="#D9A066" stroke-width="5.6"/>
+        <path d="M26 64 Q 10 67, 7 54" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"/>
+      </g>
+      <ellipse cx="54" cy="57" rx="34" ry="15" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+      <g fill="none" stroke="#8A5A2B" stroke-width="3">
+        <path d="M36 44 q3 6 1 12"/><path d="M48 42.5 q2 7 0 12"/><path d="M60 42.5 q-1 7 -2 12"/>
+      </g>
+      <ellipse cx="32" cy="63" rx="11" ry="8.5" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+      <rect x="78" y="62" width="28" height="8" rx="4" fill="#B97F48" stroke="#3B2A1E" stroke-width="1.8"/>
+      <g transform="translate(-4 10)"><CatStanding headOnly /></g>
+      <g class="reach"><rect x="74" y="65" width="30" height="8" rx="4" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/></g>
+      <g class="flower">
+        <path d="M 117 74 C 116 62 118 50 115 39" fill="none" stroke="#4E7A3E" stroke-width="2.2"/>
+        <path d="M 116.5 60 C 110 55 106 57 105 60.5 C 109.5 63 114 62.5 116.5 60 Z" fill="#7FA35F" stroke="#3B2A1E" stroke-width="1"/>
+        <g fill="#E9A3B0" stroke="#3B2A1E" stroke-width="1.2">
+          <circle cx="115" cy="29" r="4.2"/><circle cx="119.8" cy="32.5" r="4.2"/><circle cx="118" cy="38" r="4.2"/>
+          <circle cx="112" cy="38" r="4.2"/><circle cx="110.2" cy="32.5" r="4.2"/>
+        </g>
+        <circle cx="115" cy="34" r="2.8" fill="#E0B84C" stroke="#3B2A1E" stroke-width="0.8"/>
+      </g>
+    </Fragment>
+  )}
+</svg>
+      </button>
+    </div></div>
+  </div>
+  <div class="sleeper" role="img" aria-label="A tabby cat sleeping">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 74" stroke-linecap="round" stroke-linejoin="round">
+  <ellipse cx="56" cy="55" rx="36" ry="18" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <g fill="none" stroke="#8A5A2B" stroke-width="3">
+    <path d="M36 40 q3 6 1 12"/><path d="M48 37.5 q2 7 0 12"/><path d="M60 37.5 q-1 7 -2 12"/>
+  </g>
+  <path d="M22 60 Q 48 76 80 68" fill="none" stroke="#3B2A1E" stroke-width="9"/>
+  <path d="M22 60 Q 48 76 80 68" fill="none" stroke="#D9A066" stroke-width="5.6"/>
+  <path d="M22 60 Q 48 76 80 68" fill="none" stroke="#8A5A2B" stroke-width="5.6" stroke-dasharray="3 5" stroke-linecap="butt"/>
+  <path d="M78 45 L80 31 L88 40 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <path d="M93 40 L101 31 L102 46 Z" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <circle cx="89" cy="53" r="14" fill="#D9A066" stroke="#3B2A1E" stroke-width="1.8"/>
+  <ellipse cx="97" cy="58" rx="6" ry="4" fill="#F1D2A6"/>
+  <path d="M88 51 q3 2.5 6 0" fill="none" stroke="#3B2A1E" stroke-width="1.5"/>
+  <circle cx="101.5" cy="56" r="1.4" fill="#D98C8C"/>
+  <path d="M85 41 l1 5" fill="none" stroke="#8A5A2B" stroke-width="2"/>
+  <path d="M90 40 l0 5.5" fill="none" stroke="#8A5A2B" stroke-width="2"/>
+</svg>
+    <span aria-hidden="true">z z</span>
+  </div>
+</div>
+
+<style>
+  .cat-track{--cat-w:64px;--dur:44s;position:relative;height:60px;border-bottom:1px solid var(--rule)}
+  .walker{position:absolute;left:0;bottom:0}
+  .flip{transform-origin:50% 50%}
+  .moving .walker{animation:walk var(--dur) linear infinite}
+  .moving .flip{animation:turn var(--dur) linear infinite}
+  .still .walker{left:18%}
+  @keyframes walk{0%{transform:translateX(0)}50%{transform:translateX(var(--travel,800px))}100%{transform:translateX(0)}}
+  @keyframes turn{0%,49.99%{transform:scaleX(1)}50%,100%{transform:scaleX(-1)}}
+  .cat-btn{display:block;padding:6px 4px 0;margin:0;border:0;background:none;cursor:pointer;line-height:0}
+  .cat-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  .cat-btn svg{width:calc(var(--cat-w) * var(--vbw, 120) / 120);height:auto;display:block;overflow:visible}
+
+  /* The cat's parts (CatStanding.astro) */
+  .cat-track :global(.leg){transform-box:fill-box;transform-origin:50% 0}
+  .cat-track :global(.tail){transform-box:view-box;transform-origin:27px 38px;animation:sway 1.4s ease-in-out infinite alternate}
+  .cat-track :global(.head){transform-box:view-box;transform-origin:88px 40px;transition:transform .3s ease}
+  @keyframes swing{from{transform:rotate(20deg)}to{transform:rotate(-20deg)}}
+  @keyframes sway{from{transform:rotate(-9deg)}to{transform:rotate(7deg)}}
+
+  /* Home: walking */
+  .walk :global(.leg-a){animation:swing .46s ease-in-out infinite alternate}
+  .walk :global(.leg-b){animation:swing .46s ease-in-out infinite alternate-reverse}
+
+  /* Blog: running after a mouse */
+  .chase{--dur:22s}
+  .chase :global(.leg-a){animation:run .26s ease-in-out infinite alternate}
+  .chase :global(.leg-b){animation:run .26s ease-in-out infinite alternate-reverse}
+  .chase :global(.tail){animation-duration:.7s}
+  .bob{animation:bob .26s ease-in-out infinite alternate}
+  .mouse{animation:lead 1.1s ease-in-out infinite alternate}
+  .mouse-bob{animation:bob .14s ease-in-out infinite alternate}
+  .mleg{transform-box:fill-box;transform-origin:50% 0;animation:scurry .14s linear infinite alternate}
+  .mleg-b{animation-direction:alternate-reverse}
+  @keyframes run{from{transform:rotate(32deg)}to{transform:rotate(-32deg)}}
+  @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+  @keyframes lead{from{transform:translateX(0)}to{transform:translateX(8px)}}
+  @keyframes scurry{from{transform:rotate(30deg)}to{transform:rotate(-30deg)}}
+
+  /* Publications: batting a ball of yarn */
+  .play :global(.tail){animation-duration:.9s}
+  .play :global(.head){transform:rotate(8deg)}
+  .play :global(.paw){animation:bat 2.4s ease-in-out infinite}
+  .yarn{animation:roll 2.4s ease-in-out infinite}
+  .yarn-spin{transform-box:fill-box;transform-origin:center;animation:spin 2.4s ease-in-out infinite}
+  @keyframes bat{0%,6%{transform:rotate(0)}12%{transform:rotate(-55deg)}20%,100%{transform:rotate(0)}}
+  @keyframes roll{0%,12%{transform:translateX(0)}40%,58%{transform:translateX(26px)}92%,100%{transform:translateX(0)}}
+  @keyframes spin{0%,12%{transform:rotate(0)}40%,58%{transform:rotate(240deg)}92%,100%{transform:rotate(0)}}
+
+  /* Projects: lying down, pawing at a flower */
+  .lounge-tail{transform-box:view-box;transform-origin:26px 64px;animation:swish 1.6s ease-in-out infinite alternate}
+  .reach{transform-box:view-box;transform-origin:78px 69px;animation:reach 3.2s ease-in-out infinite}
+  .flower{transform-box:view-box;transform-origin:117px 74px;animation:nod 3.2s ease-in-out infinite}
+  @keyframes swish{from{transform:rotate(-10deg)}to{transform:rotate(12deg)}}
+  @keyframes reach{0%,52%{transform:rotate(0)}62%{transform:rotate(-26deg)}70%{transform:rotate(-10deg)}77%{transform:rotate(-24deg)}88%,100%{transform:rotate(0)}}
+  @keyframes nod{0%,58%{transform:rotate(0)}66%{transform:rotate(12deg)}74%{transform:rotate(-5deg)}80%{transform:rotate(9deg)}90%{transform:rotate(-3deg)}100%{transform:rotate(0)}}
+
+  /* hover or keyboard focus: stop, look up, show the label */
+  .cat-track .walker:is(:hover,:focus-within),.cat-track .walker:is(:hover,:focus-within) :global(*){animation-play-state:paused}
+  .cat-track .walker:is(:hover,:focus-within) :global(.leg){animation:none}
+  .cat-track .walker:is(:hover,:focus-within) :global(.head){transform:rotate(-12deg)}
+  .tip{display:none;position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);white-space:nowrap;padding:4px 8px;border-radius:4px;background:#1C1B19;color:#FAF8F3;font:12px/1.3 var(--mono)}
+  .walker:is(:hover,:focus-within) .tip{display:block}
+  .hop{animation:hop .45s ease-out}
+  @keyframes hop{0%{transform:translateY(0)}40%{transform:translateY(-18px)}100%{transform:translateY(0)}}
+  .sleeper{display:none;position:absolute;right:0;bottom:0;align-items:flex-end;gap:2px}
+  .sleeper svg{width:var(--cat-w);height:auto}
+  .sleeper span{font:12px var(--mono);color:var(--muted);padding-bottom:36px}
+  @media (prefers-reduced-motion: reduce){.walker{display:none}.sleeper{display:flex}}
+  @media (max-width:640px){.cat-track{--cat-w:44px}.still .walker{left:32%}}
+</style>
+
+<script>
+  // Keep the cat inside the line: travel = line width minus the cat's own width.
+  const track = document.querySelector<HTMLElement>('[data-cat-track]');
+  const walker = document.querySelector<HTMLElement>('[data-cat-walker]');
+  const hopper = document.querySelector<HTMLElement>('[data-cat-hopper]');
+  const cat = document.querySelector<HTMLButtonElement>('[data-cat-button]');
+
+  if (track && walker && hopper && cat) {
+    const setTravel = () => track.style.setProperty('--travel', track.clientWidth - walker.offsetWidth + 'px');
+    new ResizeObserver(setTravel).observe(track);
+    setTravel();
+
+    // Click to hop (restart the animation each click).
+    cat.addEventListener('click', () => {
+      hopper.classList.remove('hop');
+      void hopper.offsetWidth;
+      hopper.classList.add('hop');
+    });
+    hopper.addEventListener('animationend', (event) => {
+      if (event.animationName === 'hop' || event.target === hopper) hopper.classList.remove('hop');
+    });
+
+    // Near the ends of the line on small screens, nudge the label back onto the screen.
+    const tip = walker.querySelector<HTMLElement>('.tip');
+    const keepTipOnScreen = () => {
+      if (!tip) return;
+      tip.style.marginLeft = '0px';
+      requestAnimationFrame(() => {
+        const r = tip.getBoundingClientRect();
+        const edge = 8;
+        const shift = r.left < edge ? edge - r.left : r.right > innerWidth - edge ? innerWidth - edge - r.right : 0;
+        tip.style.marginLeft = shift + 'px';
+      });
+    };
+    walker.addEventListener('pointerenter', keepTipOnScreen);
+    walker.addEventListener('focusin', keepTipOnScreen);
+  }
+</script>

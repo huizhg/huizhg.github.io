@@ -1,0 +1,146 @@
+/* Article body. Spacing follows design/blog-post.dc.html: a 22px rhythm between blocks. */
+.prose {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.prose > * {
+  margin: 0;
+}
+
+.prose h2 {
+  margin-top: 28px;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.prose h3 {
+  margin-top: 16px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 26px;
+}
+
+.prose li + li {
+  margin-top: 6px;
+}
+
+.prose blockquote {
+  padding-left: 20px;
+  border-left: 2px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.prose hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.prose img {
+  display: block;
+  height: auto;
+  border-radius: 8px;
+}
+
+.prose :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--card);
+  font-family: var(--mono);
+  font-size: 0.8em;
+}
+
+/* Code blocks: Shiki with the two palette themes from code-themes.mjs. */
+.prose pre {
+  padding: 20px 24px;
+  border-radius: 8px;
+  background: var(--card) !important;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  font: inherit;
+}
+
+.prose pre,
+.prose pre span {
+  color: var(--shiki-light);
+  font-style: var(--shiki-light-font-style, inherit);
+}
+
+:root[data-theme='dark'] .prose pre,
+:root[data-theme='dark'] .prose pre span {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style, inherit);
+}
+
+/* Figures */
+.prose figure {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prose figcaption {
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.prose .figure-placeholder {
+  height: 280px;
+  padding: 16px;
+  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  border-radius: 8px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Math (KaTeX) */
+.prose .katex {
+  font-size: 1.05em;
+}
+
+.prose .katex-display {
+  margin: 0;
+  padding: 18px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.prose .katex-display > .katex {
+  font-size: 1.1em;
+}
+
+@media (max-width: 640px) {
+  .prose h2 {
+    font-size: 25px;
+  }
+  .prose pre {
+    padding: 16px 18px;
+    font-size: 13px;
+  }
+  .prose .figure-placeholder {
+    height: 200px;
+  }
+}

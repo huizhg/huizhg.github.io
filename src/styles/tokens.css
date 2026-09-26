@@ -1,0 +1,43 @@
+:root {
+  --bg: #FAF8F3;
+  --ink: #1C1B19;
+  --ink-soft: #45423C;
+  --muted: #5E5A52;
+  --rule: #E4DFD4;
+  --card: #F2EEE5;
+  --accent: #1F5C5A;
+  --accent-hover: #123B3A;
+
+  --serif: 'Newsreader Variable', 'Newsreader', Georgia, serif;
+  --sans: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  color-scheme: light;
+}
+
+/* No-JS fallback: follow the system setting. The head script normally sets data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #151412;
+    --ink: #ECE8DF;
+    --ink-soft: #C9C4B9;
+    --muted: #A39E93;
+    --rule: #2E2B27;
+    --card: #1F1D1A;
+    --accent: #6FB3AE;
+    --accent-hover: #9AD0CB;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #151412;
+  --ink: #ECE8DF;
+  --ink-soft: #C9C4B9;
+  --muted: #A39E93;
+  --rule: #2E2B27;
+  --card: #1F1D1A;
+  --accent: #6FB3AE;
+  --accent-hover: #9AD0CB;
+  color-scheme: dark;
+}
