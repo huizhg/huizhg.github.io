@@ -1,12 +1,12 @@
 ---
 title: 'Beyond the ℓp Ball: A Survey of Unrestricted Adversarial Examples'
-description: The first survey dedicated to unrestricted adversarial examples (UAEs) in image classification. A taxonomy by generation mechanism, the FAIR evaluation framework, open challenges, and UAEs as probes for mechanistic interpretability. Full text of our paper under review at TMLR.
+description: The first survey dedicated to unrestricted adversarial examples (UAEs) in image classification. A taxonomy by generation mechanism, the FAIR evaluation framework, open challenges, and UAEs as probes for mechanistic interpretability.
 date: 2026-09-26
 tags: [adversarial-examples, survey, interpretability]
 draft: false
 ---
 
-<div class="paper-meta"><p class="paper-authors">Hui Kuurila-Zhang<sup>1</sup>, Hui Wei<sup>1</sup>, Hanliang Xie<sup>1</sup>, Haoyu Chen<sup>1</sup>, Guoying Zhao<sup>1,2</sup></p><p><sup>1</sup>Center for Machine Vision and Signal Analysis (CMVS), University of Oulu<br><sup>2</sup>ELLIS Institute Finland</p><p>Under review at <em>Transactions on Machine Learning Research</em> (TMLR).</p></div>
+<div class="paper-meta"><p class="paper-authors">Hui Kuurila-Zhang<sup>1</sup>, Hui Wei<sup>1</sup>, Hanliang Xie<sup>1</sup>, Haoyu Chen<sup>1</sup>, Guoying Zhao<sup>1,2</sup></p><p><sup>1</sup>Center for Machine Vision and Signal Analysis (CMVS), University of Oulu<br><sup>2</sup>ELLIS Institute Finland</p></div>
 
 <h2 id="abstract">Abstract</h2>
 
