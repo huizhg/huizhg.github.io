@@ -144,3 +144,136 @@
     height: 200px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Long-form papers (e.g. /blog/beyond-the-lp-ball/): sub-subsections, author
+   byline, numbered figures/tables, footnotes and an author-year bibliography.
+   --------------------------------------------------------------------------- */
+
+/* Jump targets (sections, figures, references) clear the sticky reading header. */
+.prose [id] {
+  scroll-margin-top: 120px;
+}
+
+.prose h4 {
+  margin-top: 8px;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.prose .paper-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.prose .paper-meta p {
+  margin: 0;
+}
+
+.prose .paper-meta .paper-authors {
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.prose .muted {
+  color: var(--muted);
+}
+
+.prose sup.fn {
+  font-family: var(--sans);
+  font-size: 0.7em;
+  line-height: 0;
+}
+
+.prose .figure-link {
+  display: block;
+}
+
+.prose figure img {
+  width: 100%;
+}
+
+/* Tables: captions above, horizontal scroll when too wide for the screen. */
+.prose .table-figure.wide {
+  align-self: center;
+  width: min(1120px, calc(100vw - 32px));
+}
+
+.prose .table-scroll {
+  overflow-x: auto;
+}
+
+.prose table {
+  min-width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.prose .table-figure.wide table {
+  min-width: 1040px;
+}
+
+.prose th,
+.prose td {
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--rule);
+}
+
+.prose th {
+  font-weight: 600;
+  border-top: 2px solid var(--ink-soft);
+  border-bottom-color: var(--ink-soft);
+}
+
+.prose tbody + tbody tr:first-child td {
+  border-top: 1px solid var(--ink-soft);
+}
+
+.prose tbody:last-child tr:last-child td {
+  border-bottom: 2px solid var(--ink-soft);
+}
+
+.prose th.c,
+.prose td.c {
+  text-align: center;
+}
+
+/* Footnotes and bibliography share the post's references style. */
+.prose .footnote-list,
+.prose .bibliography {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.prose .bibliography {
+  padding-left: 0;
+  list-style: none;
+}
+
+.prose .bibliography li {
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+  overflow-wrap: anywhere;
+}
+
+.prose .bibliography li + li {
+  margin-top: 10px;
+}
+
+.prose .bibliography li:target,
+.prose .footnote-list li:target {
+  background: var(--card);
+}
