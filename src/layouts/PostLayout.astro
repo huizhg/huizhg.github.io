@@ -27,6 +27,7 @@ const year = new Date().getFullYear();
         <h1>{title}</h1>
         <p class="meta">
           <time datetime={date.toISOString().slice(0, 10)}>{formatDate(date)}</time> · {readingTime(post.body)} min · {site.name}{draft && ' · Draft'}
+          {site.goatcounter && <span class="views" data-views={`https://${site.goatcounter}.goatcounter.com`}>&nbsp;</span>}
         </p>
       </header>
 
@@ -54,6 +55,22 @@ const year = new Date().getFullYear();
     </article>
   </main>
 </BaseLayout>
+
+<script>
+  // Fills in the view count from GoatCounter under the meta line. The line stays
+  // blank if the request fails or is blocked.
+  const views = document.querySelector<HTMLElement>('[data-views]');
+  if (views) {
+    // A post with no views yet answers 404, still with a count of "0".
+    fetch(`${views.dataset.views}/counter/${encodeURIComponent(location.pathname)}.json`)
+      .then((response) => response.json())
+      .then(({ count }) => {
+        if (typeof count !== 'string') return;
+        views.textContent = `${count} ${count === '1' ? 'view' : 'views'}`;
+      })
+      .catch(() => {});
+  }
+</script>
 
 <style>
   main {
@@ -88,6 +105,11 @@ const year = new Date().getFullYear();
     font-family: var(--sans);
     font-size: 15px;
     color: var(--muted);
+  }
+  /* Its own line under the date; the placeholder space keeps the height while the count loads. */
+  .views {
+    display: block;
+    margin-top: 4px;
   }
   .references {
     display: flex;

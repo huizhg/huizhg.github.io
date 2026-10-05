@@ -70,6 +70,11 @@ const image = hasPhoto ? new URL(site.photo, Astro.site).href : undefined;
     <meta name="twitter:title" content={title ?? site.name} />
     <meta name="twitter:description" content={description} />
     {image && <meta name="twitter:image" content={image} />}
+    {
+      site.goatcounter && (
+        <script is:inline async data-goatcounter={`https://${site.goatcounter}.goatcounter.com/count`} src="https://gc.zgo.at/count.js" />
+      )
+    }
     <slot name="head" />
   </head>
   <body>

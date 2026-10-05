@@ -16,6 +16,10 @@ export const site = {
   // Spellings of your name in publications.bib. Matching authors are shown in bold.
   authorNames: ['Hui Kuurila-Zhang', 'Hui Zhang'],
 
+  // View counting with GoatCounter. Your site code is the first part of your
+  // GoatCounter address: 'abc' for abc.goatcounter.com. Leave empty to turn it off.
+  goatcounter: 'huizhg',
+
   // Files in the public/ folder.
   photo: '/profile.jpg',
   cv: '/cv.pdf',

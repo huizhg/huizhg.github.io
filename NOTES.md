@@ -79,6 +79,15 @@ The Projects page (`/projects/`) and the Projects section on the home page are p
 - **CV:** replace `public/cv.pdf`.
 - **Favicon:** `public/favicon.svg` (the cat's head).
 
+## View counts
+
+Views are counted by [GoatCounter](https://www.goatcounter.com) (no cookies). Your site code goes in `goatcounter` in `content/site.ts`; an empty value turns counting off.
+
+- Every page is counted. The dashboard at `https://<code>.goatcounter.com` shows views per page and where visitors came from.
+- Each post shows its count on a line under the date and your name. No other page shows one. This needs **Settings → Allow adding visitor counts on your website** turned on in GoatCounter.
+- Visits on `localhost` are not counted, so `npm run dev` doesn't inflate the numbers. The count you see there is the live site's count for that post.
+- The code is the script tag in `src/layouts/BaseLayout.astro` and the script at the end of `src/layouts/PostLayout.astro`.
+
 ## Run it locally
 
 You need Node.js 22.12 or newer (24 LTS recommended).
