@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* ?embed (or ?embed=explore / ?embed=hierarchy) hides the page chrome so the page can sit in an iframe in a blog post.
+   ?theme=light or ?theme=dark forces a colour scheme; without it the page follows the reader's system setting. */
+(function(){
+  var q=new URLSearchParams(location.search), d=document.documentElement;
+  if(q.has("embed")){d.classList.add("is-embed");d.setAttribute("data-embed",q.get("embed")||"1");}
+  var t=q.get("theme"); if(t==="light"||t==="dark")d.setAttribute("data-theme",t);
+})();
+</script>
+<title>MI250X Anatomy</title>
+<meta name="description" content="Interactive anatomy of the AMD Instinct MI250X: package, GCD and compute unit, with sourced bandwidth and latency figures.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Shantell+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: an engineer's notebook. A sketched die on dot-grid paper on the left, a typed spec card on the right.
+   The drawing explores; the card proves. Colour encodes what a block does, the same grammar as the Excalidraw figure. */
+:root{
+  --paper:#f6f7f8; --canvas:#fbfcfd; --dot:#d8dde3; --card:#ffffff; --rule:#dde2e8; --rule-2:#c6cdd5;
+  --ink:#1d2126; --ink-2:#4a525c; --muted:#68717c;
+  --compute:#e03131; --memory:#1971c2; --fabric:#099268; --control:#1d2126;
+  --focus:#1971c2; --tip:#1d2126; --tip-ink:#f6f7f8;
+  --font-hand:"Shantell Sans","Segoe Print","Chalkboard SE",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --s-1:.8125rem; --s0:1rem; --s1:1.1875rem; --s2:1.5rem; --s3:2rem; --s4:clamp(2.4rem,1.7rem + 2.6vw,3.6rem);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171b; --canvas:#181b20; --dot:#2b3038; --card:#1c1f24; --rule:#2d3239; --rule-2:#3c434c;
+    --ink:#e7eaee; --ink-2:#b4bcc6; --muted:#8f98a3;
+    --compute:#f03e3e; --memory:#339af0; --fabric:#0ca678; --control:#e7eaee;
+    --focus:#339af0; --tip:#e7eaee; --tip-ink:#15171b; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15171b; --canvas:#181b20; --dot:#2b3038; --card:#1c1f24; --rule:#2d3239; --rule-2:#3c434c;
+  --ink:#e7eaee; --ink-2:#b4bcc6; --muted:#8f98a3;
+  --compute:#f03e3e; --memory:#339af0; --fabric:#0ca678; --control:#e7eaee;
+  --focus:#339af0; --tip:#e7eaee; --tip-ink:#15171b; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:var(--s0);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--memory);text-underline-offset:2px}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.page{max-width:1260px;margin:0 auto;padding-inline:clamp(16px,4vw,44px);padding-block:36px 72px;display:grid;gap:64px}
+
+/* masthead */
+.mast{display:grid;gap:14px;max-width:880px}
+.ways{display:inline-flex;align-items:center;gap:2px;padding:4px;border:1px solid var(--rule-2);border-radius:12px;background:var(--card);width:max-content;max-width:100%}
+.ways span,.ways a{padding:7px 14px;border-radius:8px;font:500 .9375rem/1.2 var(--font-body);text-decoration:none;color:var(--ink-2);white-space:nowrap}
+.ways [aria-current="page"]{background:var(--ink);color:var(--paper)}
+.ways a:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
+.eyebrow{margin:0;font:500 var(--s-1)/1.3 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0;font:700 var(--s4)/1.02 var(--font-hand);letter-spacing:-.01em;text-wrap:balance}
+.lede{margin:0;font-size:var(--s1);color:var(--ink-2);max-width:62ch;text-wrap:pretty}
+.facts{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font:400 var(--s-1)/1.5 var(--font-mono);color:var(--muted)}
+.facts b{font-weight:500;color:var(--ink)}
+.facts li{white-space:nowrap}
+
+h2{margin:0;font:700 var(--s3)/1.1 var(--font-hand);text-wrap:balance}
+h3{margin:0;font:600 var(--s1)/1.25 var(--font-hand)}
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px 28px}
+.sec-lede{margin:6px 0 0;color:var(--ink-2);max-width:64ch}
+
+/* legend */
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:var(--s-1);color:var(--ink-2)}
+.legend li{display:flex;align-items:center;gap:7px}
+.sw{width:22px;height:12px;border:2px solid currentColor;border-radius:4px;display:inline-block}
+.sw.k-compute{color:var(--compute)} .sw.k-memory{color:var(--memory)} .sw.k-fabric{color:var(--fabric)} .sw.k-control{color:var(--control)}
+
+/* explorer */
+.explore{display:grid;gap:18px}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 24px}
+.levels{display:inline-flex;align-items:center;gap:2px;padding:4px;border:1px solid var(--rule-2);border-radius:12px;background:var(--card)}
+.levels button{appearance:none;border:0;background:transparent;color:var(--ink-2);cursor:pointer;border-radius:8px;padding:7px 13px;display:grid;gap:1px;text-align:left;font:500 .9375rem/1.2 var(--font-body)}
+.levels button small{font:400 .75rem/1.2 var(--font-mono);color:var(--muted)}
+.levels button:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.levels button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.levels button[aria-selected="true"] small{color:color-mix(in srgb,var(--paper) 75%,transparent)}
+.crumb{color:var(--muted);font-size:1rem;padding:0 2px}
+.tours{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tours-lab{font:600 .9375rem var(--font-hand);color:var(--ink-2);margin-right:2px}
+.tours button{appearance:none;cursor:pointer;border:1.5px dashed var(--rule-2);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;font:500 .875rem/1.2 var(--font-body)}
+.tours button:hover{border-color:var(--ink-2)}
+.tours button[aria-pressed="true"]{border-style:solid;border-color:var(--ink);background:var(--card)}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+@media (min-width:1180px){
+  .stage{grid-template-columns:minmax(0,1fr) minmax(320px,370px)}
+  .panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);overflow:auto}
+}
+.canvas-fig{margin:0;display:grid;gap:8px;min-width:0}
+.canvas{position:relative;border:1px solid var(--rule);border-radius:16px;overflow-x:auto;background-color:var(--canvas);
+  background-image:radial-gradient(var(--dot) 1px,transparent 1.3px);background-size:18px 18px;background-position:9px 9px}
+.canvas svg.dg{display:block;width:100%;min-width:640px;height:auto}
+@media (max-width:700px){.canvas svg.dg{min-width:760px}}
+.canvas svg.dg[hidden]{display:none}
+.canvas-fig figcaption{font-size:var(--s-1);color:var(--muted);max-width:80ch}
+.swipe{margin:0;font-size:var(--s-1);color:var(--muted);display:none}
+@media (max-width:700px){.swipe{display:block}}
+.selbar{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:.9375rem;color:var(--ink-2)}
+.selbar b{color:var(--ink);font-weight:600}
+@media (min-width:1180px){.selbar{display:none}}
+
+/* diagram */
+.dg text{font-family:var(--font-hand)}
+.dg .lbl{font-size:19px;font-weight:600;fill:var(--ink)}
+.dg .lbl.sm{font-size:15px;font-weight:600;fill:var(--ink-2)}
+.dg .sub{font-family:var(--font-body);font-size:14.5px;fill:var(--muted)}
+.dg .note{font-size:15px;fill:var(--muted)}
+.dg .elabel{font-family:var(--font-body);font-size:14.5px;font-weight:500;fill:var(--ink);paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round;opacity:0;transition:opacity .2s}
+.dg .elabel.on{opacity:1}
+.node{cursor:pointer;transition:opacity .25s ease}
+.node .hit{fill:transparent;stroke:none;transition:fill .2s}
+.node.k-compute{color:var(--compute)} .node.k-memory{color:var(--memory)} .node.k-fabric{color:var(--fabric)}
+.node.k-control,.node.k-die{color:var(--control)} .node.k-host{color:var(--ink-2)} .node.k-group{color:var(--muted)}
+.node:hover .hit{fill:color-mix(in srgb,currentColor 7%,transparent)}
+.node.k-group:hover .hit{fill:color-mix(in srgb,currentColor 4%,transparent)}
+.node.is-sel .hit{fill:color-mix(in srgb,currentColor 12%,transparent)}
+.node.k-die.is-sel .hit,.node.k-control.is-sel .hit{fill:color-mix(in srgb,currentColor 7%,transparent)}
+.node.k-group.is-sel .hit{fill:color-mix(in srgb,currentColor 6%,transparent)}
+.node.is-sel .sketch path{stroke-width:2.8}
+.node:focus{outline:none}
+.node:focus-visible .hit{stroke:var(--focus);stroke-width:2.5;stroke-dasharray:5 4}
+.has-sel .node:not(.is-sel):not(.is-nbr):not(.is-ctx){opacity:.28}
+.glyph{stroke:currentColor;fill:none;stroke-width:1.2;opacity:.55}
+.chan{fill:none;stroke:currentColor;stroke-width:1;opacity:.45}
+.edge{color:var(--muted);transition:opacity .25s ease}
+.edge .line path{transition:stroke-width .2s}
+.edge .ehit{fill:none;stroke:transparent;stroke-width:16px;pointer-events:stroke;cursor:pointer}
+.edge .wire{fill:none;stroke:none}
+.has-sel .edge:not(.is-on){opacity:.32}
+.edge.is-on.k-memory{color:var(--memory)} .edge.is-on.k-fabric{color:var(--fabric)} .edge.is-on.k-control{color:var(--control)} .edge.is-on.k-compute{color:var(--compute)}
+.edge.is-on .line path{stroke-width:2.6}
+.edge.is-sel .line path{stroke-width:3.4}
+.mk{stroke:none}
+.mk-memory{fill:var(--memory)} .mk-fabric{fill:var(--fabric)} .mk-control{fill:var(--control)} .mk-compute{fill:var(--compute)}
+.flow circle{stroke:var(--canvas);stroke-width:1.5}
+.flow.k-memory circle{fill:var(--memory)} .flow.k-fabric circle{fill:var(--fabric)} .flow.k-control circle{fill:var(--control)} .flow.k-compute circle{fill:var(--compute)}
+
+/* panel */
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:20px 20px 22px;display:grid;gap:12px;min-width:0}
+.panel h4{margin:6px 0 0;font:600 var(--s-1)/1.3 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel p{margin:0;max-width:62ch}
+.kick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:var(--s-1);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 .75rem/1 var(--font-body);color:var(--ink-2);border:1px solid var(--rule-2);border-radius:999px;padding:4px 9px 4px 7px}
+.chip::before{content:"";width:10px;height:10px;border-radius:3px;border:2px solid currentColor}
+.chip.k-compute::before{color:var(--compute)} .chip.k-memory::before{color:var(--memory)} .chip.k-fabric::before{color:var(--fabric)}
+.chip.k-control::before,.chip.k-die::before{color:var(--control)} .chip.k-host::before,.chip.k-group::before{color:var(--muted)}
+.ptitle{margin:0;font:700 var(--s2)/1.15 var(--font-hand);text-wrap:balance}
+.psum{color:var(--ink-2)}
+.specs{margin:0;display:grid;gap:0;border-top:1px solid var(--rule)}
+.spec{display:grid;grid-template-columns:minmax(96px,38%) minmax(0,1fr);gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--rule)}
+.spec dt{font-size:var(--s-1);color:var(--muted);padding-top:1px}
+.spec dd{margin:0;min-width:0;font:500 .9375rem/1.4 var(--font-body);color:var(--ink)}
+.spec .v{font-variant-numeric:tabular-nums}
+.spec .v{display:block}
+.spec .meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin-top:3px}
+.spec .f{font:400 .75rem/1.4 var(--font-mono);color:var(--muted)}
+.tag{display:inline-block;vertical-align:1px;font:500 .6875rem/1 var(--font-mono);letter-spacing:.02em;padding:3px 6px;border-radius:5px;border:1px solid var(--rule-2);color:var(--ink-2);white-space:nowrap}
+.tag.t-meas{border-style:dashed}
+.tag.t-der{border-color:transparent;background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.refs{font:500 .6875rem var(--font-mono);margin-left:3px;white-space:nowrap}
+.refs a{text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.conns{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.conns li{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:baseline;gap:6px}
+.conns .dir{font:500 1rem/1 var(--font-mono);color:var(--muted);text-align:center}
+.linkbtn{appearance:none;border:0;background:none;padding:0;cursor:pointer;color:var(--memory);font:500 .9375rem/1.4 var(--font-body);text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--memory) 40%,transparent);text-underline-offset:3px}
+.linkbtn:hover{text-decoration-color:currentColor}
+.numbtn{display:block;appearance:none;border:0;background:none;padding:0;cursor:pointer;text-align:left;font:400 .8125rem/1.45 var(--font-mono);color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px}
+.numbtn:hover{color:var(--ink)}
+.analog{font-size:var(--s-1);color:var(--ink-2);padding:9px 12px;border-radius:10px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.analog span{display:block;font:600 .6875rem/1.3 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.zoom{justify-self:start;appearance:none;cursor:pointer;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:10px;padding:8px 14px;font:600 .9375rem var(--font-body)}
+.zoom:hover{background:transparent;color:var(--ink)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ghost{appearance:none;cursor:pointer;border:1.5px solid var(--rule-2);background:transparent;color:var(--ink);border-radius:10px;padding:7px 13px;font:500 .875rem var(--font-body)}
+.ghost:hover{border-color:var(--ink-2)}
+.ghost:disabled{opacity:.4;cursor:default}
+.metric{font-size:.9375rem;color:var(--ink);padding:10px 12px;border-left:3px solid var(--memory);background:color-mix(in srgb,var(--memory) 7%,transparent);border-radius:0 8px 8px 0}
+.steps{list-style:none;margin:0;padding:0;display:flex;gap:5px}
+.steps li{width:22px;height:5px;border-radius:3px;background:var(--rule-2)}
+.steps li.done{background:var(--ink-2)} .steps li.now{background:var(--memory)}
+code,.mono{font-family:var(--font-mono);font-size:.875em}
+
+/* wave viz */
+.wave{display:grid;gap:8px;padding:12px;border:1px dashed var(--rule-2);border-radius:12px}
+.wave-grid{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:3px}
+.wave-grid i{display:block;aspect-ratio:1;max-width:100%;border-radius:3px;border:1.5px solid color-mix(in srgb,var(--compute) 45%,transparent);transition:background .2s}
+.wave-grid i.on{background:var(--compute);border-color:var(--compute)}
+.wave-grid i.done{background:color-mix(in srgb,var(--compute) 22%,transparent)}
+.wave p{font-size:var(--s-1);color:var(--ink-2)}
+.wave b{font-family:var(--font-mono);font-weight:500;color:var(--ink)}
+/* occupancy viz */
+.occ{display:grid;gap:10px;padding:12px;border:1px dashed var(--rule-2);border-radius:12px}
+.occ label{font-size:var(--s-1);color:var(--ink-2);display:flex;justify-content:space-between;gap:10px}
+.occ output{font:500 .875rem var(--font-mono);color:var(--ink)}
+.occ input{width:100%;accent-color:var(--memory)}
+.slots{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+.slots i{display:block;height:22px;border-radius:5px;border:1.5px solid var(--rule-2)}
+.slots i.on{background:var(--memory);border-color:var(--memory)}
+.occ p{font-size:var(--s-1);color:var(--ink-2)}
+
+/* charts */
+.hier{display:grid;gap:26px}
+.chart{margin:0;display:grid;gap:10px;align-content:start;min-width:0;background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:18px 18px 16px}
+.chart figcaption{font-size:var(--s-1);color:var(--ink-2);max-width:78ch}
+.chart-scroll{overflow-x:auto}
+.chart svg{display:block;width:100%;height:auto}
+#stairs svg{min-width:620px}
+.cx text{font-family:var(--font-body);fill:var(--ink)}
+.cx .tick{font:400 11px var(--font-mono);fill:var(--muted)}
+.cx .grid{stroke:var(--rule);stroke-width:1}
+.cx .base{stroke:var(--rule-2);stroke-width:1}
+.cx .rname{font:600 14.5px var(--font-hand);fill:var(--ink)}
+.cx .rval{font:400 11.5px var(--font-mono);fill:var(--muted)}
+.cx .vlab{font:500 12px var(--font-mono);fill:var(--ink)}
+.cx .axt{font:500 11.5px var(--font-body);fill:var(--ink-2)}
+.cx .bar-mem{fill:var(--memory)} .cx .bar-fab{fill:var(--fabric)}
+.cx .na{font:400 11.5px var(--font-body);fill:var(--muted);font-style:italic}
+.cx .row{cursor:pointer}
+.cx .row .bg{fill:transparent;transition:fill .15s}
+.cx .row:hover .bg,.cx .row:focus .bg{fill:color-mix(in srgb,var(--ink) 5%,transparent)}
+.cx .row:focus{outline:none}
+.cx .row:focus-visible .bg{stroke:var(--focus);stroke-width:1.5;stroke-dasharray:4 3}
+.ckey{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:var(--s-1);color:var(--ink-2)}
+.ckey li{display:flex;align-items:center;gap:7px}
+.ckey i{width:14px;height:10px;border-radius:2px;display:inline-block}
+.ckey i.mem{background:var(--memory)} .ckey i.fab{background:var(--fabric)}
+.two{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+@media (min-width:900px){.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.subhead{margin:4px 0 0;font:600 .75rem/1.3 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+details.tbl summary{cursor:pointer;font:500 .875rem var(--font-body);color:var(--memory);width:max-content;max-width:100%}
+.tablewrap{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.875rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 .75rem/1.3 var(--font-body);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--font-mono);font-size:.8125rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tip{position:fixed;z-index:20;pointer-events:none;max-width:280px;background:var(--tip);color:var(--tip-ink);border-radius:10px;padding:9px 11px;font:400 .8125rem/1.45 var(--font-body);box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.tip b{font-weight:600}
+.tip .m{font-family:var(--font-mono);font-size:.75rem;opacity:.85}
+
+/* sources */
+.sources{display:grid;gap:18px}
+.tagkey{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+@media (min-width:760px){.tagkey{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+.tagkey div{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--rule);border-radius:12px;background:var(--card)}
+.tagkey dt{margin:0}
+.tagkey dt .tag{margin-left:0}
+.tagkey dd{margin:0;font-size:var(--s-1);color:var(--ink-2)}
+.srclist{margin:0;padding-left:1.6em;display:grid;gap:8px;max-width:90ch}
+.srclist li{padding-left:4px;scroll-margin-top:24px}
+.srclist li:target{background:color-mix(in srgb,var(--memory) 10%,transparent);border-radius:6px}
+.srclist .org{color:var(--muted);font-size:var(--s-1)}
+.srclist .use{display:block;font-size:var(--s-1);color:var(--ink-2)}
+.foot{font-size:var(--s-1);color:var(--muted);border-top:1px solid var(--rule);padding-top:16px;max-width:90ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+html,body{margin:0}
+[hidden]{display:none!important}
+/* embed mode: no masthead, sources or footer; the post around the iframe supplies them */
+.is-embed .page{padding-block:6px 10px;gap:24px}
+.is-embed .mast,.is-embed .foot,.is-embed #sources,.is-embed h2{display:none!important}
+/* the card can't be sticky inside an auto-height iframe, and a 100vh cap would feed back into the height */
+.is-embed .card,.is-embed .panel{position:static!important;max-height:none!important;overflow:visible!important}
+[data-embed="explore"] #hierarchy,[data-embed="hierarchy"] #explore{display:none!important}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="mast">
+    <nav class="ways" aria-label="Two ways to read about the MI250X">
+      <a href="mi250x-glance.html" target="_blank" rel="noopener">Overview ↗</a>
+      <span aria-current="page">Full anatomy</span>
+    </nav>
+    <p class="eyebrow">AMD Instinct MI250X · CDNA 2 · gfx90a</p>
+    <h1>Anatomy of the MI250X</h1>
+    <p class="lede">Click any block to see what it connects to, which way data moves, and how fast. Start at the package, open a GCD, then open a compute unit. Every number in the details panel carries a tag that says where it comes from.</p>
+    <ul class="facts" aria-label="Headline specifications">
+      <li><b>2</b> GCDs</li><li><b>220</b> compute units</li><li><b>128 GB</b> HBM2e</li><li><b>3.2 TB/s</b></li><li><b>383 TFLOPS</b> FP16 matrix</li><li><b>47.9 TFLOPS</b> FP64 vector</li><li><b>500 W</b> or <b>560 W</b><sup class="refs"><a href="#src-1">1</a></sup></li>
+    </ul>
+  </header>
+
+  <section class="explore" id="explore" aria-labelledby="explore-h">
+    <div class="sec-head">
+      <h2 id="explore-h">Explore the chip</h2>
+      <ul class="legend" aria-label="Color key">
+        <li><span class="sw k-compute"></span>Compute</li>
+        <li><span class="sw k-memory"></span>Memory and caches</li>
+        <li><span class="sw k-fabric"></span>Interconnect</li>
+        <li><span class="sw k-control"></span>Control</li>
+      </ul>
+    </div>
+    <div class="toolbar">
+      <div class="levels" role="tablist" aria-label="Zoom level">
+        <button role="tab" id="tab-pkg" data-level="pkg" aria-controls="canvas">Package<small>2 GCDs</small></button>
+        <span class="crumb" aria-hidden="true">›</span>
+        <button role="tab" id="tab-gcd" data-level="gcd" aria-controls="canvas">GCD<small>110 CUs</small></button>
+        <span class="crumb" aria-hidden="true">›</span>
+        <button role="tab" id="tab-cu" data-level="cu" aria-controls="canvas">Compute unit<small>4 SIMDs</small></button>
+      </div>
+      <div class="tours" role="group" aria-label="Follow the data">
+        <span class="tours-lab">Follow the data:</span>
+        <button type="button" data-tour="load" aria-pressed="false">Load from HBM</button>
+        <button type="button" data-tour="gemm" aria-pressed="false">GEMM tile via LDS</button>
+        <button type="button" data-tour="scalar" aria-pressed="false">Uniform value</button>
+        <button type="button" data-tour="peer" aria-pressed="false">Peer GCD read</button>
+        <button type="button" data-tour="host" aria-pressed="false">Host copy</button>
+      </div>
+    </div>
+    <div class="stage">
+      <figure class="canvas-fig">
+        <div class="canvas" id="canvas" role="tabpanel"></div>
+        <figcaption id="cap"></figcaption>
+        <p class="swipe">Swipe sideways to see the whole diagram.</p>
+        <p class="selbar"><span>Showing <b id="selname">L2 cache</b></span><button type="button" class="ghost" id="tojump">Read the details ↓</button></p>
+      </figure>
+      <aside class="panel" id="panel" aria-label="Details"></aside>
+    </div>
+    <p class="sr-only" id="status" aria-live="polite"></p>
+  </section>
+
+  <section class="hier" id="hierarchy" aria-labelledby="hier-h">
+    <div>
+      <h2 id="hier-h">The memory staircase</h2>
+      <p class="sec-lede" id="hier-lede">Every step away from the ALUs buys capacity and costs bandwidth and latency. All figures are for one GCD; click a row to find it in the diagram.</p>
+    </div>
+    <figure class="chart">
+      <h3>Capacity against peak bandwidth, per GCD</h3>
+      <ul class="ckey" aria-label="Bar colours">
+        <li><i class="mem"></i>this GCD's own memory path</li>
+        <li><i class="fab"></i>reached over Infinity Fabric</li>
+      </ul>
+      <div class="chart-scroll" id="stairs"></div>
+      <figcaption>Both halves use log scales, so each gridline is a fixed ratio. The register files hold more data than the L2, LDS and vector L1 combined, yet HBM, the next level out, has under a quarter of the L2's bandwidth and 8,192 times its capacity.</figcaption>
+      <details class="tbl">
+        <summary>Show the numbers as a table</summary>
+        <div class="tablewrap" id="stairs-table"></div>
+      </details>
+    </figure>
+    <div class="two">
+      <figure class="chart">
+        <h3>What one CU gets per clock</h3>
+        <div id="budget"></div>
+        <figcaption id="budget-cap"></figcaption>
+      </figure>
+      <figure class="chart">
+        <h3>Latency of one dependent load</h3>
+        <p class="subhead">MI250X, relative to a scalar-cache hit</p>
+        <div id="lat"></div>
+        <p class="subhead">First-level hits, MI210 (same CDNA 2 compute unit)</p>
+        <div id="lat2"></div>
+        <figcaption id="lat-cap"></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sources" id="sources" aria-labelledby="src-h">
+    <h2 id="src-h">Sources and how to read the numbers</h2>
+    <dl class="tagkey">
+      <div><dt><span class="tag t-spec">AMD spec</span></dt><dd>A figure from AMD's MI200 datasheet.</dd></div>
+      <div><dt><span class="tag t-doc">docs</span></dt><dd>Official documentation from AMD, LUMI or Oak Ridge (Frontier).</dd></div>
+      <div><dt><span class="tag t-meas">measured</span></dt><dd>A published microbenchmark. The device is named when it is not an MI250X.</dd></div>
+      <div><dt><span class="tag t-der">derived</span></dt><dd>Arithmetic on the figures above. The formula is shown under the value.</dd></div>
+      <div><dt><span class="tag t-ana">analysis</span></dt><dd>Independent architecture analysis (Chips and Cheese).</dd></div>
+    </dl>
+    <ol class="srclist" id="srclist"></ol>
+  </section>
+  <p class="foot">Peak figures assume the 1.7 GHz peak engine clock. Latency comes from the MI250X where a measurement exists and from the MI210, a single CDNA 2 die with 104 CUs, otherwise. Diagrams are schematics, not floorplans.</p>
+</main>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script>
+(function(){
+"use strict";
+var NS="http://www.w3.org/2000/svg";
+var RM=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var EMBED=document.documentElement.classList.contains("is-embed");
+var EMBEDMODE=EMBED?(document.documentElement.getAttribute("data-embed")||""):"";
+
+/* ---------------- sources ---------------- */
+var SRC=[
+ {k:"ds",  t:"AMD Instinct MI200 Series datasheet", o:"AMD", u:"https://www.amd.com/content/dam/amd/en/documents/instinct-tech-docs/instinct-mi200-datasheet.pdf", use:"Package totals, HBM2e bus and clock, Infinity Fabric link count, CPU coherency, board power."},
+ {k:"specs",t:"Accelerator and GPU hardware specifications", o:"AMD ROCm documentation", u:"https://rocm.docs.amd.com/en/latest/reference/gpu-specs.html", use:"CU count, LDS, L1, scalar and instruction caches, register files, L2 per GCD, gfx90a."},
+ {k:"mi250",t:"AMD Instinct MI250 microarchitecture", o:"AMD ROCm documentation", u:"https://rocm.docs.amd.com/en/docs-6.2.2/conceptual/gpu-arch/mi250.html", use:"16-lane SIMDs, 1.7 GHz, per-CU FLOPs per clock, 1.6 TB/s HBM per GCD, Infinity Fabric link rates."},
+ {k:"isa", t:"AMD Instinct MI200 instruction set architecture reference guide", o:"AMD", u:"https://www.amd.com/content/dam/amd/en/documents/instinct-tech-docs/instruction-set-architectures/instinct-mi200-cdna2-instruction-set-architecture.pdf", use:"Unified VGPR/AGPR pool, per-wave register limits, SGPR limit, buffer loads into LDS."},
+ {k:"pipe",t:"Pipeline descriptions", o:"ROCm Compute Profiler (Omniperf) documentation", u:"https://rocm.docs.amd.com/projects/omniperf/en/docs-6.2.0/conceptual/pipeline-descriptions.html", use:"Scheduler issue rules, 8 wave slots per SIMD on CDNA 2, MFMA co-execution with VALU."},
+ {k:"vl1", t:"Vector L1 cache (vL1D)", o:"ROCm Compute Profiler documentation", u:"https://rocm.docs.amd.com/projects/rocprofiler-compute/en/docs-6.2.1/conceptual/vector-l1-cache.html", use:"64 B vector L1 line."},
+ {k:"l2doc",t:"L2 cache (TCC)", o:"ROCm Compute Profiler documentation", u:"https://rocm.docs.amd.com/projects/omniperf/en/docs-6.2.1/conceptual/l2-cache.html", use:"32 channels, 256 B interleave, 128 B L2 line, 32 or 64 B fabric transactions, coherence point."},
+ {k:"perf",t:"AMD Instinct MI series accelerator performance model", o:"ROCm Compute Profiler documentation", u:"https://rocm.github.io/rocprofiler-compute/performance_model.html", use:"LDS banks and 128 B per clock, write-through vector L1, TA and TD units."},
+ {k:"gpuopen",t:"Register pressure in AMD CDNA2 GPUs", o:"AMD GPUOpen lab notes", u:"https://gpuopen.com/learn/amd-lab-notes/amd-lab-notes-register-pressure-readme/", use:"At most eight wavefronts per SIMD."},
+ {k:"isablog",t:"Reading AMD GPU ISA", o:"AMD ROCm blogs", u:"https://rocm.blogs.amd.com/software-tools-optimization/amdgcn-isa/README.html", use:"One scalar ALU per CU, 800 SGPRs per SIMD."},
+ {k:"lumi",t:"GPU nodes: LUMI-G", o:"LUMI documentation", u:"https://docs.lumi-supercomputer.eu/hardware/lumig/", use:"112 physical CUs with 110 enabled, L2 slices and 6.96 TB/s, L2 atomics, wavefront execution, node wiring and NIC."},
+ {k:"olcf",t:"Frontier user guide", o:"Oak Ridge Leadership Computing Facility", u:"https://docs.olcf.ornl.gov/systems/frontier_user_guide.html", use:"36 GB/s each way between the CPU and each GCD."},
+ {k:"hc34",t:"Hot Chips 34: AMD's Instinct MI200 architecture", o:"Chips and Cheese", u:"https://chipsandcheese.com/p/hot-chips-34-amds-instinct-mi200-architecture", use:"Compute engines, shader engines, ACEs, 16-way L2, FP64 atomics."},
+ {k:"mi210",t:"AMD's Radeon Instinct MI210: GCN lives on", o:"Chips and Cheese", u:"https://chipsandcheese.com/p/amds-radeon-instinct-mi210-gcn-lives-on", use:"Measured scalar cache, vector L1 and LDS latency; measured L2 bandwidth; packed FP32."},
+ {k:"cdna3",t:"AMD's CDNA 3 compute architecture", o:"Chips and Cheese", u:"https://chipsandcheese.com/p/amds-cdna-3-compute-architecture", use:"CDNA 2 vector L1 throughput of 64 B per clock."},
+ {k:"mall",t:"A. Tee, The MALL is Open: Exploring Shared Caches and Latency in AMD CDNA 3 GPUs", o:"UC Riverside thesis, in collaboration with AMD, 2025", u:"https://escholarship.org/uc/item/3b8311qq", use:"MI250X pointer-chase latency of L2 and HBM relative to the scalar cache; four HBM2e stacks per GCD; no last-level cache on CDNA 2."},
+ {k:"pearson",t:"C. Pearson, Interconnect Bandwidth Heterogeneity on AMD MI250x and Infinity Fabric", o:"Sandia National Laboratories, 2023", u:"https://arxiv.org/abs/2302.14827", use:"Measured GCD-to-GCD bandwidth by transfer method; coherent CPU link; pageable copy penalty."},
+ {k:"llvm",t:"AMDGPU backend source: IntrinsicsAMDGPU.td and AMDGPUBaseInfo.cpp", o:"LLVM project", u:"https://github.com/llvm/llvm-project/tree/main/llvm/lib/Target/AMDGPU", use:"Direct-to-LDS load sizes of 1, 2 or 4 bytes on gfx9; gfx90a register allocation in blocks of 8 and the waves-per-SIMD formula."}
+];
+var SN={}; SRC.forEach(function(s,i){SN[s.k]=i+1;});
+var TAG={spec:"AMD spec",doc:"docs",meas:"measured",der:"derived",ana:"analysis"};
+var KIND={compute:"Compute",memory:"Memory",fabric:"Interconnect",control:"Control",die:"Die",host:"Outside the package",group:"Grouping"};
+
+/* ---------------- facts per block ---------------- */
+/* spec rows: [label, value, tag, [source keys], formula or note] */
+var INFO={
+ /* package level */
+ pkg:{t:"MI250X package",kind:"group",kick:"OAM module",
+  sum:"Two GPU dies (GCDs) and eight HBM2e stacks on one module. Software sees two separate GPUs.",
+  specs:[["Compute units","220 (110 per GCD)","spec",["ds","specs"]],
+   ["HBM2e","128 GB · 8,192-bit bus · 3.2 TB/s","spec",["ds"]],
+   ["Peak FP64","47.9 TFLOPS vector · 95.7 matrix","spec",["ds"]],
+   ["Peak FP16 / BF16","383 TFLOPS matrix","spec",["ds"]],
+   ["Engine clock","1.7 GHz peak","doc",["mi250"]],
+   ["Infinity Fabric links","up to 8","spec",["ds"]],
+   ["Board power","500 W passive · 560 W liquid","spec",["ds"]]],
+  how:["Each GCD has its own CUs, L2 and HBM. The two dies share no caches and no memory; they talk only over the Infinity Fabric links between them, so GCD 0 reaches GCD 1's memory at link speed, not at HBM speed."],
+  analog:"Closer to two GPUs on one board than to one large die like the H100."},
+ gcd0:{t:"GCD 0",kind:"die",kick:"Graphics compute die",
+  sum:"One complete GPU. ROCm, HIP and Slurm list each GCD as its own device, so a LUMI node with four MI250X packages shows eight GPUs.",
+  specs:[["Compute units","110 enabled (112 on the die)","doc",["lumi"]],
+   ["L2 cache","8 MiB","doc",["specs"]],
+   ["HBM2e","64 GiB · 1.6 TB/s peak","doc",["specs","mi250"]],
+   ["Peak FP64 vector","23.9 TFLOPS","der",["mi250"],"110 CUs × 128 FLOPs/clk × 1.7 GHz"],
+   ["Peak FP16 matrix","191.5 TFLOPS","der",["mi250"],"110 CUs × 1,024 FLOPs/clk × 1.7 GHz"],
+   ["LLVM target","gfx90a","doc",["specs"]]],
+  how:["A kernel launched on this GCD runs only on its 110 CUs and caches only in its own L2. Using both dies means treating them as two GPUs: two processes, or two devices in one process."],
+  zoom:{to:"gcd",label:"Open the GCD"}},
+ gcd1:{t:"GCD 1",kind:"die",kick:"Graphics compute die",
+  sum:"Identical to GCD 0, with its own 110 CUs, 8 MiB of L2 and 64 GiB of HBM2e.",
+  specs:[["Compute units","110 enabled (112 on the die)","doc",["lumi"]],
+   ["HBM2e","64 GiB · 1.6 TB/s peak","doc",["specs","mi250"]]],
+  how:["The GCD view shows the inside of one die. Both dies look the same."],
+  zoom:{to:"gcd",label:"Open the GCD"}},
+ hbm0:{t:"HBM2e of GCD 0",kind:"memory",kick:"Device memory",
+  sum:"Four HBM2e stacks wired to this die only.",
+  specs:[["Capacity","64 GiB in 4 stacks","doc",["specs","mall"]],
+   ["Peak bandwidth","1.6 TB/s","doc",["mi250"]],
+   ["Bus","4,096 bits at 1.6 GHz","der",["ds"],"half of the package's 8,192-bit bus"],
+   ["Latency","≈ 13.6× a scalar-cache hit","meas",["mall"],"MI250X, one dependent load at a time"]],
+  how:["The other GCD can read this memory too, but only through Infinity Fabric at up to 200 GB/s each way. For reads that is an eighth of the local rate."]},
+ hbm1:{t:"HBM2e of GCD 1",kind:"memory",kick:"Device memory",
+  sum:"Four HBM2e stacks wired to GCD 1 only.",
+  specs:[["Capacity","64 GiB in 4 stacks","doc",["specs","mall"]],
+   ["Peak bandwidth","1.6 TB/s","doc",["mi250"]]],
+  how:["From GCD 0, this memory is remote: every access crosses the in-package Infinity Fabric."]},
+ cpu:{t:"Host CPU",kind:"host",kick:"Outside the package",
+  sum:"On LUMI and Frontier, a 64-core AMD EPYC 7A53 “Trento”. One CPU serves four MI250X packages.",
+  specs:[["Link to each GCD","Infinity Fabric · 36 GB/s each way","doc",["olcf"]],
+   ["Coherency","CPU-GPU coherency supported","spec",["ds"]],
+   ["LUMI node memory","512 GiB DDR4","doc",["lumi"]],
+   ["CPU-GPU links","2 per package","doc",["lumi"]]],
+  how:["Host-to-device copies cross these links. Pageable host memory is staged through a pinned buffer first; Pearson measured those copies up to 5× slower than copies from pinned memory."]},
+ other:{t:"Other MI250X packages",kind:"host",kick:"Outside the package",
+  sum:"GCDs on different packages talk over Infinity Fabric links. A LUMI node has three more packages.",
+  specs:[["Per link","50 GB/s each way","doc",["mi250"],"25 GT/s × 2 B per transfer on a 16-lane link"],
+   ["LUMI wiring","1 or 2 links per GCD pair","doc",["lumi"]],
+   ["GPU-GPU links","5 per package (LUMI)","doc",["lumi"]],
+   ["Measured","77 GB/s on 2 links · 39 GB/s on 1","meas",["pearson"],"kernel loads and stores, Frontier-class node"]],
+  how:["Bandwidth between two GCDs depends on which pair you pick, so process placement matters in multi-GPU jobs."]},
+ nic:{t:"Network interface",kind:"host",kick:"Outside the package",
+  sum:"On LUMI, each MI250X package connects directly to its own Slingshot-11 NIC over PCIe.",
+  specs:[["Network","25 GB/s each way per package","doc",["lumi"]],["Link","1 PCIe link per package","doc",["lumi"]]],
+  how:["Traffic to other nodes leaves here. At 25 GB/s each way it is the narrowest pipe in this picture."]},
+ e_cpu0:{t:"CPU to GCD 0",kind:"fabric",kick:"Link",
+  specs:[["Bandwidth","36 GB/s each way","doc",["olcf"]],["Type","coherent Infinity Fabric","doc",["pearson"]]],
+  how:["One link per GCD on Frontier-class nodes. Copies from pinned host memory run fastest."]},
+ e_cpu1:{t:"CPU to GCD 1",kind:"fabric",kick:"Link",
+  specs:[["Bandwidth","36 GB/s each way","doc",["olcf"]],["Type","coherent Infinity Fabric","doc",["pearson"]]]},
+ e_if:{t:"In-package Infinity Fabric",kind:"fabric",kick:"Link",
+  specs:[["Links","4 × 16 lanes at 25 GT/s","doc",["mi250"]],
+   ["Peak","200 GB/s each way · 400 GB/s total","doc",["mi250"]],
+   ["Measured, kernel loads/stores","153 GB/s (≈ 77% of peak)","meas",["pearson"]],
+   ["Measured, hipMemcpyAsync","51 GB/s","meas",["pearson"],"a ceiling Pearson attributes to the DMA engine"]],
+  how:["A kernel that reads or writes the peer's memory directly gets three times the bandwidth of a DMA copy over this link."]},
+ e_hbm0:{t:"GCD 0 to its HBM2e",kind:"memory",kick:"Link",
+  specs:[["Peak","1.6 TB/s","doc",["mi250"]],["Bus","4,096 bits","der",["ds"],"8,192-bit package bus ÷ 2 GCDs"]],
+  how:["The widest pipe that leaves the die. Reading over any other off-die path is at least 8× slower: the fastest, the link to GCD 1, carries 200 GB/s in each direction."]},
+ e_hbm1:{t:"GCD 1 to its HBM2e",kind:"memory",kick:"Link",
+  specs:[["Peak","1.6 TB/s","doc",["mi250"]]]},
+ e_x0:{t:"GCD 0 to other packages",kind:"fabric",kick:"Link",
+  specs:[["Per link","50 GB/s each way","doc",["mi250"]],["LUMI","1 or 2 links per GCD pair","doc",["lumi"]]]},
+ e_x1:{t:"GCD 1 to other packages",kind:"fabric",kick:"Link",
+  specs:[["Per link","50 GB/s each way","doc",["mi250"]],["LUMI","1 or 2 links per GCD pair","doc",["lumi"]]]},
+ e_nic:{t:"Package to NIC",kind:"fabric",kick:"Link",
+  specs:[["Link","PCIe","doc",["lumi"]],["Network","25 GB/s each way","doc",["lumi"]]]},
+
+ /* GCD level */
+ dispatch:{t:"Workload dispatch",kind:"control",kick:"Control",
+  sum:"Four asynchronous compute engines (ACEs), one per compute engine, launch workgroups onto the CUs.",
+  specs:[["ACEs","4","ana",["hc34"]],["Workgroup","up to 1,024 threads","doc",["lumi"]],["Wavefront","64 threads","doc",["specs"]]],
+  how:["A workgroup never splits across CUs: all of its wavefronts run on one CU. That is what lets them share the CU's LDS and meet at a barrier."]},
+ se:{t:"Compute and shader engines",kind:"group",kick:"Organization",
+  sum:"The die's 112 CUs sit in 4 compute engines of 2 shader engines each, 14 CUs per shader engine. 110 are enabled on the MI250X.",
+  specs:[["Compute engines","4","ana",["hc34"]],["Shader engines","8 (2 per compute engine)","ana",["hc34"]],["CUs per shader engine","14 on the die","ana",["hc34"]],["Enabled CUs","110 of 112","doc",["lumi"]]],
+  how:["To a kernel the CUs form one flat pool. The hardware decides which CU each workgroup lands on."]},
+ cu:{t:"Compute unit (×110)",kind:"compute",kick:"Compute",
+  sum:"Runs wavefronts: 4 SIMDs with matrix cores, a scalar unit, 64 KiB of LDS and a 16 KiB vector L1.",
+  specs:[["FP64 lanes","64 (4 SIMDs × 16)","doc",["mi250"]],
+   ["Wave slots","32 (8 per SIMD)","doc",["gpuopen","pipe"]],
+   ["Vector registers","512 KiB","doc",["specs"]],
+   ["LDS · vector L1","64 KiB · 16 KiB","doc",["specs"]],
+   ["Resident per GCD","3,520 waves (225,280 threads)","der",["gpuopen"],"110 CUs × 32 waves × 64 threads"]],
+  how:["Open the CU to follow a wavefront inside one."],
+  zoom:{to:"cu",label:"Open the CU",sel:"simd"}},
+ l2:{t:"L2 cache",kind:"memory",kick:"Shared by all 110 CUs",
+  sum:"The only cache every CU on the die shares, and the point where their views of memory agree.",
+  specs:[["Capacity","8 MiB, 16-way","doc",["specs","hc34"]],
+   ["Channels","32, interleaved every 256 B","doc",["l2doc"]],
+   ["Line size","128 B","doc",["l2doc"]],
+   ["Peak bandwidth","6.96 TB/s","doc",["lumi"],"32 channels × 128 B/clk × 1.7 GHz"],
+   ["Measured bandwidth","3.7 TB/s on MI210","meas",["mi210"],"one CDNA 2 die, 104 CUs"],
+   ["Latency","≈ 4.1× a scalar-cache hit","meas",["mall"],"MI250X, one dependent load at a time"],
+   ["Atomics","executed here, FP64 included","doc",["lumi","hc34"]]],
+  how:["A hash spreads addresses over the 32 channels so they work in parallel. A miss goes out over the Infinity Fabric to this GCD's HBM, or to remote memory on the other GCD or the host."],
+  analog:"Plays the role of the H100's L2, at 8 MiB per die instead of 50 MB."},
+ fabric:{t:"Infinity Fabric (on die)",kind:"fabric",kick:"Interconnect",
+  sum:"Carries L2 misses to this GCD's HBM, to the other GCD, or off the package.",
+  specs:[["L2 to fabric","32 B or 64 B transactions","doc",["l2doc"]],["Last-level cache","none: L2 is the last cache before HBM","doc",["mall"]]],
+  how:["Local HBM answers at up to 1.6 TB/s. Anything remote rides the external links, which top out at 200 GB/s each way."]},
+ hbm:{t:"HBM2e (this GCD)",kind:"memory",kick:"Device memory",
+  sum:"Four HBM2e stacks wired to this die only.",
+  specs:[["Capacity","64 GiB in 4 stacks","doc",["specs","mall"]],
+   ["Peak bandwidth","1.6 TB/s","doc",["mi250"]],
+   ["Per CU, all 110 busy","≈ 8.6 B per clock","der",["mi250"],"1.6 TB/s ÷ 1.7 GHz ÷ 110 CUs"],
+   ["Latency","≈ 13.6× a scalar-cache hit","meas",["mall"],"MI250X, one dependent load at a time"]],
+  how:["HBM is where the 64 GiB live, but it is the slowest level on the die's own path. Kernels that touch each byte once are limited by this 1.6 TB/s."]},
+ peer:{t:"Links to GCD 1",kind:"fabric",kick:"Interconnect",
+  sum:"Four Infinity Fabric links join the two dies inside the package.",
+  specs:[["Links","4 × 16 lanes at 25 GT/s","doc",["mi250"]],
+   ["Peak","200 GB/s each way · 400 GB/s total","doc",["mi250"]],
+   ["Measured, kernel loads/stores","153 GB/s","meas",["pearson"]],
+   ["Measured, hipMemcpyAsync","51 GB/s","meas",["pearson"],"a ceiling Pearson attributes to the DMA engine"]],
+  how:["For reads, peer access gets an eighth of local HBM bandwidth at best."],
+  zoom:{to:"pkg",label:"Show the package",sel:"e_if",selType:"edge"}},
+ ext:{t:"Off-package links",kind:"fabric",kick:"Interconnect",
+  sum:"Each GCD has two Infinity Fabric interfaces with four links each. Four links join the two dies; the other four leave the package, and one of them can run as PCIe.",
+  specs:[["Interfaces","2 per GCD, 4 links each","doc",["mi250"]],
+   ["GPU link","50 GB/s each way","doc",["mi250"]],
+   ["CPU link","36 GB/s each way","doc",["olcf"],"Frontier-class node"],
+   ["Per package on LUMI","5 GPU-GPU · 2 CPU-GPU · 1 PCIe","doc",["lumi"]]],
+  how:["On a LUMI node these links tie eight GCDs and the CPU together, and one PCIe link per package reaches the Slingshot NIC."],
+  zoom:{to:"pkg",label:"Show the package",sel:"cpu"}},
+ e_disp:{t:"Workgroup launch",kind:"control",kick:"Link",
+  specs:[["Placement","1 workgroup → 1 CU","doc",["lumi"]],["Size","up to 16 waves","der",["lumi","specs"],"1,024 threads ÷ 64"]]},
+ e_cu_l2:{t:"CUs to L2",kind:"memory",kick:"Link",
+  specs:[["Peak","6.96 TB/s","doc",["lumi"]],["Per CU, all 110 busy","≈ 37 B per clock","der",["lumi"],"4,096 B/clk ÷ 110 CUs"]],
+  how:["Vector L1, scalar-cache and instruction-cache misses all arrive here."]},
+ e_l2_fab:{t:"L2 to fabric",kind:"memory",kick:"Link",
+  specs:[["Transactions","32 B or 64 B","doc",["l2doc"]]]},
+ e_fab_hbm:{t:"Fabric to HBM2e",kind:"memory",kick:"Link",
+  specs:[["Peak","1.6 TB/s","doc",["mi250"]],["Per CU, all 110 busy","≈ 8.6 B per clock","der",["mi250"],"1.6 TB/s ÷ 1.7 GHz ÷ 110 CUs"]]},
+ e_fab_peer:{t:"Fabric to GCD 1",kind:"fabric",kick:"Link",
+  specs:[["Peak","200 GB/s each way","doc",["mi250"]],["Measured","153 GB/s","meas",["pearson"],"kernel loads and stores"]]},
+ e_fab_ext:{t:"Fabric to off-package links",kind:"fabric",kick:"Link",
+  specs:[["GPU link","50 GB/s each way","doc",["mi250"]],["CPU link","36 GB/s each way","doc",["olcf"]]]},
+
+ /* CU level */
+ icache:{t:"Instruction cache",kind:"memory",kick:"Shared by 2 CUs",
+  sum:"Holds the kernel's machine code. Each pair of CUs shares one.",
+  specs:[["Capacity","32 KiB per 2 CUs","doc",["specs"]]],
+  how:["Misses are filled from L2."]},
+ scache:{t:"Scalar cache",kind:"memory",kick:"Shared by 2 CUs",
+  sum:"Serves scalar loads: values that are the same for every thread in a wave.",
+  specs:[["Capacity","16 KiB per 2 CUs","doc",["specs"]],
+   ["Hit latency","37.5 ns","meas",["mi210"],"MI210"],
+   ["Role here","the 1× baseline for latency","meas",["mall"]]],
+  how:["Kernel arguments, base addresses and loop bounds load once per wave into an SGPR, instead of into all 64 lanes of a VGPR."]},
+ scheduler:{t:"Scheduler",kind:"control",kick:"Control",
+  sum:"Holds up to 8 waves per SIMD and picks which of them issue each cycle.",
+  specs:[["Wave slots","8 per SIMD · 32 per CU","doc",["gpuopen","pipe"]],
+   ["Issue","up to 5 instructions per cycle to the selected SIMD","doc",["pipe"]],
+   ["Rule","one per category, each from a different wave","doc",["pipe"]]],
+  how:["The five categories are vector ALU, vector memory, scalar ALU or memory, LDS, and branch. When one wave stalls on memory the scheduler issues from another, so more resident waves hide more latency."],
+  analog:"Does the job of an SM sub-partition's warp scheduler, for 64-thread waves."},
+ salu:{t:"Scalar ALU",kind:"compute",kick:"Compute",
+  sum:"Computes values that are the same for the whole wave.",
+  specs:[["Per CU","1","doc",["isablog"]]],
+  how:["Loop counters, address arithmetic and branch conditions run here once per wave instead of 64 times on a SIMD."]},
+ sgpr:{t:"Scalar registers (SGPRs)",kind:"memory",kick:"Registers",
+  sum:"One value per wave, readable by scalar and vector instructions alike.",
+  specs:[["File","12.5 KiB per CU","doc",["specs"]],["Per SIMD","800 SGPRs","doc",["isablog"]],["Per wave","up to 102","doc",["isa"]]],
+  how:["A vector instruction can take an SGPR as an operand; every lane sees the same value."]},
+ simd:{t:"SIMD (×4 per CU)",kind:"compute",kick:"Compute",
+  sum:"A 16-lane vector unit and a matrix core, with a 128 KiB register file and up to 8 resident waves.",
+  specs:[["Lanes","16","doc",["mi250"]],
+   ["Wave64 vector instruction","4 cycles","doc",["mi250","lumi"]],
+   ["Resident waves","up to 8","doc",["gpuopen"]],
+   ["Register file","128 KiB","doc",["lumi"],"512 registers × 64 lanes × 4 B"],
+   ["FP64","full rate: 16 FMAs per cycle","doc",["mi250","mi210"]]],
+  how:["The 16 lanes process a 64-thread wave in four passes. With four SIMDs taking turns, a CU completes one wave-instruction per cycle on average."],
+  viz:"wave"},
+ valu:{t:"Vector ALU",kind:"compute",kick:"Compute",
+  sum:"16 lanes per SIMD. Each vector instruction covers the wave's 64 threads in 4 cycles.",
+  specs:[["FP64 or FP32","128 FLOPs/clk per CU","doc",["mi250"]],
+   ["Packed FP32","256 FLOPs/clk per CU","doc",["mi250"]],
+   ["Per GCD, FP64","23.9 TFLOPS peak","der",["mi250"],"110 × 128 × 1.7 GHz"]],
+  how:["Packed FP32 (<code>v_pk_fma_f32</code>) does two FP32 FMAs per lane per cycle using pairs of 32-bit registers. It doubles FP32 throughput when the compiler can use it."],
+  viz:"wave"},
+ mfma:{t:"Matrix core",kind:"compute",kick:"Compute",
+  sum:"Executes MFMA instructions: small matrix multiply-accumulates on tiles held in registers.",
+  specs:[["FP64 or FP32","256 FLOPs/clk per CU","doc",["mi250"]],
+   ["FP16 or BF16","1,024 FLOPs/clk per CU","doc",["mi250"]],
+   ["INT8","1,024 ops/clk per CU","doc",["mi250"]],
+   ["Per GCD, FP16","191.5 TFLOPS peak","der",["mi250"],"110 × 1,024 × 1.7 GHz"],
+   ["Alongside the VALU","can co-execute","doc",["pipe"]]],
+  how:["Example: <code>v_mfma_f32_32x32x8f16</code> multiplies a 32×8 FP16 tile by an 8×32 tile and adds into a 32×32 FP32 tile, 16,384 FLOPs. At peak rate one SIMD's matrix core takes 64 cycles for it, and the 32×32 result occupies 16 registers per lane."],
+  analog:"AMD's counterpart to NVIDIA Tensor Cores."},
+ vgpr:{t:"Vector registers (VGPRs + AGPRs)",kind:"memory",kick:"Registers",
+  sum:"Each thread's private working set. AGPRs mostly hold MFMA accumulators.",
+  specs:[["Per SIMD","128 KiB","doc",["lumi"]],
+   ["Per CU","512 KiB","doc",["specs"]],
+   ["Per GCD","55 MiB","der",["specs"],"110 × 512 KiB"],
+   ["Per wave","up to 512 per lane: 256 VGPR + 256 AGPR","doc",["isa"]],
+   ["Waves per SIMD","512 ÷ registers per lane, max 8","der",["isa","llvm"],"registers counted in blocks of 8"]],
+  how:["Loads can write straight into AGPRs on MI200. Across the GCD the register files hold 55 MiB, more than three times the L2, LDS and vector L1 combined."],
+  viz:"occ"},
+ lds:{t:"Local data share (LDS)",kind:"memory",kick:"Scratchpad",
+  sum:"A 64 KiB scratchpad shared by the threads of one workgroup. Software decides what goes in.",
+  specs:[["Capacity","64 KiB per CU","doc",["specs"]],
+   ["Banks","32 × 4 B","doc",["perf"]],
+   ["Bandwidth","128 B/clk per CU","doc",["perf"]],
+   ["Per GCD","6.9 MiB · 23.9 TB/s","der",["specs","perf"],"110 × 64 KiB; 110 × 128 B/clk × 1.7 GHz"],
+   ["Latency","faster than the vector L1, a little faster than the scalar cache","meas",["mi210"],"MI210"]],
+  how:["Threads write a tile here, meet at a barrier, then read it many times. Two lanes that touch different addresses in the same bank serialize: a bank conflict.","How much LDS each workgroup uses limits how many workgroups fit on the CU at once."],
+  analog:"NVIDIA's shared memory, except it is its own SRAM rather than a slice of L1."},
+ tatd:{t:"Vector memory unit",kind:"memory",kick:"Load and store",
+  sum:"Turns a wave's 64 addresses into cache accesses and returns the data.",
+  specs:[["TA","texture addresser: coalesces the wave's requests into vector L1 lookups","doc",["perf"]],
+   ["TD","texture data: routes returned data back to the wave","doc",["perf"]],
+   ["Direct to LDS","buffer_load … lds, 1, 2 or 4 B per lane","doc",["isa","llvm"]]],
+  how:["Global and buffer loads and stores start here. With <code>buffer_load … lds</code> the returning data goes straight into LDS and skips the VGPRs."]},
+ vl1:{t:"Vector L1 cache",kind:"memory",kick:"One per CU",
+  sum:"A small, write-through cache in front of L2 for vector loads.",
+  specs:[["Capacity","16 KiB per CU (256 lines)","doc",["specs"]],
+   ["Line size","64 B","doc",["vl1"]],
+   ["Bandwidth","64 B/clk per CU","ana",["cdna3"]],
+   ["Write policy","write-through","doc",["perf"]],
+   ["Hit latency","just over 85 ns","meas",["mi210"],"MI210"],
+   ["Per GCD","1.7 MiB · 12.0 TB/s","der",["specs","cdna3"],"110 × 16 KiB; 110 × 64 B/clk × 1.7 GHz"]],
+  how:["With only 256 lines it catches reuse that happens close together in time. Stores pass through to L2."]},
+ l2out:{t:"L2 cache",kind:"memory",kick:"Shared by all 110 CUs",
+  sum:"Every miss from this CU's vector L1, scalar cache and instruction cache lands in the GCD's shared L2.",
+  specs:[["Capacity","8 MiB, 16-way","doc",["specs","hc34"]],["Peak bandwidth","6.96 TB/s for the whole GCD","doc",["lumi"]],["Latency","≈ 4.1× a scalar-cache hit","meas",["mall"]]],
+  how:["Open the GCD view to follow a miss further."],
+  zoom:{to:"gcd",label:"Open the GCD view",sel:"l2"}},
+ e_ic_sched:{t:"Instruction fetch",kind:"control",kick:"Link",specs:[]},
+ e_sched_simd:{t:"Issue to a SIMD",kind:"control",kick:"Link",specs:[["Per cycle","up to 5 instructions to the selected SIMD","doc",["pipe"]]]},
+ e_sched_salu:{t:"Scalar issue",kind:"control",kick:"Link",specs:[]},
+ e_salu_sgpr:{t:"Scalar ALU and SGPRs",kind:"memory",kick:"Link",specs:[]},
+ e_sc_sgpr:{t:"Scalar load",kind:"memory",kick:"Link",specs:[["Hit latency","37.5 ns","meas",["mi210"],"MI210"]]},
+ e_sgpr_simd:{t:"SGPR as a vector operand",kind:"memory",kick:"Link",specs:[],how:["One SGPR value feeds all 64 lanes."]},
+ e_valu_vgpr:{t:"Vector ALU and registers",kind:"memory",kick:"Link",specs:[]},
+ e_mfma_vgpr:{t:"Matrix core and registers",kind:"memory",kick:"Link",specs:[],how:["A and B tiles come from registers; the C tile accumulates in registers, usually AGPRs."]},
+ e_simd_lds:{t:"LDS access",kind:"memory",kick:"Link",specs:[["Bandwidth","128 B/clk per CU","doc",["perf"]]]},
+ e_simd_tatd:{t:"Vector memory access",kind:"memory",kick:"Link",specs:[],how:["<code>global_load</code>, <code>global_store</code> and <code>buffer_*</code> instructions."]},
+ e_tatd_vl1:{t:"Vector L1 access",kind:"memory",kick:"Link",specs:[["Bandwidth","64 B/clk per CU","ana",["cdna3"]]]},
+ e_tatd_lds:{t:"Direct load into LDS",kind:"memory",kick:"Link",specs:[["Instruction","buffer_load … lds","doc",["isa"]],["Width","1, 2 or 4 B per lane","doc",["llvm"]]]},
+ e_vl1_l2:{t:"Vector L1 to L2",kind:"memory",kick:"Link",specs:[],how:["Read misses and every store (the L1 is write-through) go to L2."]},
+ e_sc_l2:{t:"Scalar cache to L2",kind:"memory",kick:"Link",specs:[]},
+ e_ic_l2:{t:"Instruction cache to L2",kind:"memory",kick:"Link",specs:[]}
+};
+
+/* ---------------- diagram geometry ---------------- */
+function frames(){
+  var r=[],i,j,x,sx,sy;
+  for(i=0;i<4;i++){
+    x=40+i*230;
+    r.push({x:x,y:112,w:220,h:262,label:"Compute engine "+i,lblAt:"tl",small:true,dashed:true,r:16});
+    for(j=0;j<2;j++){ sx=x+10; sy=112+30+j*116; r.push({x:sx,y:sy,w:200,h:106,label:"SE "+(i*2+j),lblAt:"tl",small:true,r:10}); }
+  }
+  return r;
+}
+function tiles(){
+  var r=[],i,j,row,col,sx,sy;
+  for(i=0;i<4;i++) for(j=0;j<2;j++){
+    sx=40+i*230+10; sy=112+30+j*116;
+    for(row=0;row<2;row++) for(col=0;col<7;col++) r.push({x:sx+11+col*26,y:sy+26+row*38,w:22,h:32,r:4});
+  }
+  return r;
+}
+function stacks(x0){ return [{x:x0,y:152,w:110,h:56,label:"HBM2e",sub:"16 GiB",r:8},{x:x0+150,y:152,w:110,h:56,label:"HBM2e",sub:"16 GiB",r:8},{x:x0,y:380,w:110,h:56,label:"HBM2e",sub:"16 GiB",r:8},{x:x0+150,y:380,w:110,h:56,label:"HBM2e",sub:"16 GiB",r:8}]; }
+
+var LV={
+ pkg:{name:"Package",vb:[1000,600],def:"gcd0",
+  cap:"Schematic of one MI250X package, not a floorplan. Click a die, a memory stack, a link, or empty space inside the package.",
+  nodes:[
+   {id:"pkg",kind:"group",type:"frame",x:110,y:118,w:760,h:346,r:26,dashed:true,label:"MI250X package",lblAt:"br"},
+   {id:"cpu",kind:"host",x:250,y:24,w:500,h:58,label:"Host CPU",sub:"LUMI and Frontier: AMD EPYC 7A53"},
+   {id:"gcd0",kind:"die",x:165,y:240,w:280,h:110,label:"GCD 0",sub:"110 CUs · 8 MiB L2",sw:2.3},
+   {id:"gcd1",kind:"die",x:535,y:240,w:280,h:110,label:"GCD 1",sub:"110 CUs · 8 MiB L2",sw:2.3},
+   {id:"hbm0",kind:"memory",type:"multi",rects:stacks(175)},
+   {id:"hbm1",kind:"memory",type:"multi",rects:stacks(545)},
+   {id:"other",kind:"host",x:165,y:508,w:650,h:56,label:"Other MI250X packages",sub:"3 more on a LUMI node"},
+   {id:"nic",kind:"host",x:906,y:262,w:84,h:66,label:"NIC",sub:"Slingshot-11"}
+  ],
+  edges:[
+   {id:"e_cpu0",a:"cpu",b:"gcd0",kind:"fabric",dir:"both",d:["M305 82 V240"],w:1.8,label:"36 GB/s each way",lx:313,ly:105},
+   {id:"e_cpu1",a:"cpu",b:"gcd1",kind:"fabric",dir:"both",d:["M675 82 V240"],w:1.8,label:"36 GB/s each way",lx:683,ly:105},
+   {id:"e_if",a:"gcd0",b:"gcd1",kind:"fabric",dir:"both",d:["M445 266 H535","M445 284 H535","M445 302 H535","M445 320 H535"],w:2,label:"200 GB/s each way",lx:490,ly:373,anchor:"middle"},
+   {id:"e_hbm0",a:"gcd0",b:"hbm0",kind:"memory",dir:"both",d:["M230 240 V208","M380 240 V208","M230 350 V380","M380 350 V380"],w:2.4,label:"1.6 TB/s",lx:392,ly:229},
+   {id:"e_hbm1",a:"gcd1",b:"hbm1",kind:"memory",dir:"both",d:["M600 240 V208","M750 240 V208","M600 350 V380","M750 350 V380"],w:2.4,label:"1.6 TB/s",lx:762,ly:229},
+   {id:"e_x0",a:"gcd0",b:"other",kind:"fabric",dir:"both",d:["M305 350 V508"],w:1.6,label:"50 GB/s per link",lx:313,ly:490},
+   {id:"e_x1",a:"gcd1",b:"other",kind:"fabric",dir:"both",d:["M675 350 V508"],w:1.6,label:"50 GB/s per link",lx:683,ly:490},
+   {id:"e_nic",a:"pkg",b:"nic",kind:"fabric",dir:"both",d:["M870 295 H906"],w:1.6,label:"PCIe",lx:888,ly:316,anchor:"middle"}
+  ],
+  notes:[{x:490,y:258,t:"4 links",anchor:"middle"}]},
+ gcd:{name:"GCD",vb:[1000,712],def:"l2",
+  cap:"One GCD: 112 CUs on the die, 110 of them enabled, in 8 shader engines, one shared L2, and the fabric to memory and the outside. Schematic, not a floorplan.",
+  nodes:[
+   {id:"se",kind:"group",type:"multi",rects:frames()},
+   {id:"cu",kind:"compute",type:"multi",tiles:true,rects:tiles(),aria:"Compute units, 110 enabled of 112"},
+   {id:"dispatch",kind:"control",x:40,y:24,w:920,h:52,label:"Dispatch",sub:"4 asynchronous compute engines (ACEs)",inline:true},
+   {id:"l2",kind:"memory",x:40,y:420,w:920,h:76,label:"L2 cache",sub:"8 MiB · 16-way · 32 channels · 128 B lines",channels:32},
+   {id:"fabric",kind:"fabric",x:40,y:540,w:920,h:46,label:"Infinity Fabric (on die)"},
+   {id:"hbm",kind:"memory",x:40,y:630,w:300,h:66,label:"HBM2e",sub:"4 stacks · 64 GiB · 1.6 TB/s"},
+   {id:"peer",kind:"fabric",x:370,y:630,w:260,h:66,label:"Links to GCD 1",sub:"4 Infinity Fabric links"},
+   {id:"ext",kind:"fabric",x:660,y:630,w:300,h:66,label:"Off-package links",sub:"CPU · other GCDs · PCIe"}
+  ],
+  edges:[
+   {id:"e_disp",a:"dispatch",b:"cu",kind:"control",dir:"ab",d:["M150 76 V112","M380 76 V112","M610 76 V112","M840 76 V112"],w:1.4,label:"workgroups",lx:495,ly:99,anchor:"middle"},
+   {id:"e_cu_l2",a:"cu",b:"l2",kind:"memory",dir:"both",d:["M150 374 V420","M380 374 V420","M610 374 V420","M840 374 V420"],w:2.4,label:"6.96 TB/s peak",lx:495,ly:402,anchor:"middle"},
+   {id:"e_l2_fab",a:"l2",b:"fabric",kind:"memory",dir:"both",d:["M500 496 V540"],w:2,label:"32 B or 64 B transactions",lx:510,ly:523},
+   {id:"e_fab_hbm",a:"fabric",b:"hbm",kind:"memory",dir:"both",d:["M190 586 V630"],w:2.4,label:"1.6 TB/s",lx:200,ly:613},
+   {id:"e_fab_peer",a:"fabric",b:"peer",kind:"fabric",dir:"both",d:["M500 586 V630"],w:2,label:"200 GB/s each way",lx:510,ly:613},
+   {id:"e_fab_ext",a:"fabric",b:"ext",kind:"fabric",dir:"both",d:["M810 586 V630"],w:1.6,label:"up to 50 GB/s per link",lx:820,ly:613}
+  ],
+  notes:[{x:725,y:402,t:"112 on the die, 110 enabled",anchor:"middle"}]},
+ cu:{name:"Compute unit",vb:[1000,780],def:"lds",
+  cap:"One compute unit. SIMD 0 is drawn open; SIMDs 1 to 3 are identical. Schematic, not a floorplan.",
+  nodes:[
+   {id:"simd",kind:"compute",type:"multi",rects:[
+     {x:40,y:262,w:480,h:246,label:"SIMD 0",lblAt:"tl",small:true,r:16},
+     {x:548,y:262,w:128,h:246,label:"SIMD 1",sub:"same as SIMD 0",lblAt:"tl",glyphs:true,r:14},
+     {x:690,y:262,w:128,h:246,label:"SIMD 2",sub:"same as SIMD 0",lblAt:"tl",glyphs:true,r:14},
+     {x:832,y:262,w:128,h:246,label:"SIMD 3",sub:"same as SIMD 0",lblAt:"tl",glyphs:true,r:14}]},
+   {id:"icache",kind:"memory",x:40,y:30,w:300,h:62,label:"Instruction cache",sub:"32 KiB · shared by 2 CUs"},
+   {id:"scache",kind:"memory",x:660,y:30,w:300,h:62,label:"Scalar cache",sub:"16 KiB · shared by 2 CUs"},
+   {id:"scheduler",kind:"control",x:40,y:140,w:420,h:72,label:"Scheduler",sub:"4 × 8 wave slots · up to 5 issues per cycle"},
+   {id:"salu",kind:"compute",x:500,y:140,w:180,h:72,label:"Scalar ALU",sub:"1 per CU"},
+   {id:"sgpr",kind:"memory",x:710,y:140,w:250,h:72,label:"SGPRs",sub:"12.5 KiB per CU"},
+   {id:"valu",kind:"compute",parent:"simd",x:62,y:300,w:212,h:84,label:"Vector ALU",sub:"16 lanes"},
+   {id:"mfma",kind:"compute",parent:"simd",x:290,y:300,w:212,h:84,label:"Matrix core",sub:"MFMA"},
+   {id:"vgpr",kind:"memory",parent:"simd",x:62,y:404,w:440,h:84,label:"VGPRs + AGPRs",sub:"128 KiB · up to 8 waves"},
+   {id:"lds",kind:"memory",x:40,y:566,w:400,h:82,label:"Local data share (LDS)",sub:"64 KiB · 32 banks · 128 B/clk"},
+   {id:"tatd",kind:"memory",x:480,y:566,w:170,h:82,label:"Vector memory",sub:"TA / TD"},
+   {id:"vl1",kind:"memory",x:690,y:566,w:270,h:82,label:"Vector L1",sub:"16 KiB · 64 B lines"},
+   {id:"l2out",kind:"memory",x:480,y:700,w:480,h:58,label:"L2 cache",sub:"shared by all 110 CUs"}
+  ],
+  edges:[
+   {id:"e_ic_sched",a:"icache",b:"scheduler",kind:"control",dir:"ab",d:["M190 92 V140"],w:1.4,label:"instructions",lx:200,ly:121},
+   {id:"e_sched_simd",a:"scheduler",b:"simd",kind:"control",dir:"ab",d:["M250 212 V262"],w:1.6,label:"issue",lx:260,ly:242},
+   {id:"e_sched_salu",a:"scheduler",b:"salu",kind:"control",dir:"ab",d:["M460 176 H500"],w:1.4,num:"scalar instructions"},
+   {id:"e_salu_sgpr",a:"salu",b:"sgpr",kind:"memory",dir:"both",d:["M680 176 H710"],w:1.6,num:"operands and results"},
+   {id:"e_sc_sgpr",a:"scache",b:"sgpr",kind:"memory",dir:"ab",d:["M835 92 V140"],w:1.8,label:"s_load",lx:845,ly:121},
+   {id:"e_sgpr_simd",a:"sgpr",b:"simd",kind:"memory",dir:"ab",d:["M770 212 C770 246 520 232 508 262"],w:1.6,label:"uniform operand",lx:782,ly:241},
+   {id:"e_valu_vgpr",a:"vgpr",b:"valu",kind:"memory",dir:"both",d:["M168 404 V384"],w:2,num:"operands and results"},
+   {id:"e_mfma_vgpr",a:"vgpr",b:"mfma",kind:"memory",dir:"both",d:["M396 404 V384"],w:2,num:"A and B in, C accumulates"},
+   {id:"e_simd_lds",a:"simd",b:"lds",kind:"memory",dir:"both",d:["M240 508 V566"],w:2.4,label:"ds_read / ds_write",lx:250,ly:541},
+   {id:"e_simd_tatd",a:"simd",b:"tatd",kind:"memory",dir:"both",d:["M505 508 C505 540 565 534 565 566"],w:2,label:"global_load / store",lx:578,ly:541},
+   {id:"e_tatd_vl1",a:"tatd",b:"vl1",kind:"memory",dir:"both",d:["M650 607 H690"],w:2,num:"64 B/clk per CU"},
+   {id:"e_tatd_lds",a:"tatd",b:"lds",kind:"memory",dir:"ab",dashed:true,d:["M480 607 H440"],w:1.6,num:"buffer_load … lds, 1, 2 or 4 B per lane"},
+   {id:"e_vl1_l2",a:"vl1",b:"l2out",kind:"memory",dir:"both",d:["M825 648 V700"],w:2,label:"misses",lx:835,ly:679},
+   {id:"e_sc_l2",a:"scache",b:"l2out",kind:"memory",dir:"ba",d:["M960 61 H984 V729 H960"],w:1.4,num:"misses filled from L2"},
+   {id:"e_ic_l2",a:"icache",b:"l2out",kind:"memory",dir:"ba",d:["M40 61 H16 V729 H480"],w:1.4,num:"misses filled from L2"}
+  ],
+  notes:[{x:40,y:676,t:"LDS and L1 are separate SRAMs: no carve-out",anchor:"start"}]}
+};
+
+/* ---------------- data journeys ---------------- */
+var TOURS={
+ load:{name:"Load from HBM",t:"A vector load that misses every cache",steps:[
+  {lv:"cu",n:["simd","tatd"],e:[["e_simd_tatd","ab"]],t:"Issue the load",d:"A wave executes <code>global_load_dword</code>. Its 64 per-thread addresses leave the VGPRs for the vector memory unit, where the address unit (TA) coalesces them into vector L1 lookups."},
+  {lv:"cu",n:["tatd","vl1"],e:[["e_tatd_vl1","ab"]],t:"Vector L1: miss",d:"Each vector L1 lookup covers one 64 B line. With 16 KiB per CU, data that has not been touched recently is not here."},
+  {lv:"cu",n:["vl1","l2out"],e:[["e_vl1_l2","ab"]],t:"On to L2",d:"The miss leaves the CU for the L2 that all 110 CUs share."},
+  {lv:"gcd",n:["cu","l2"],e:[["e_cu_l2","ab"]],t:"L2: miss",d:"A hash of the address picks one of 32 L2 channels, each holding 128 B lines. The line is not cached yet, so the channel misses too."},
+  {lv:"gcd",n:["l2","fabric","hbm"],e:[["e_l2_fab","ab"],["e_fab_hbm","ab"]],t:"Across the fabric to HBM",d:"The L2 sends the request over the Infinity Fabric in 32 B or 64 B transactions. This GCD's HBM2e supplies the data."},
+  {lv:"gcd",n:["hbm","fabric","l2","cu"],e:[["e_fab_hbm","ba"],["e_l2_fab","ba"],["e_cu_l2","ba"]],t:"Back up",d:"The data returns through the L2, which normally keeps a copy for the next request to that line, and travels on to the CU."},
+  {lv:"cu",n:["vl1","tatd","simd","vgpr"],e:[["e_tatd_vl1","ba"],["e_simd_tatd","ba"]],t:"Into registers",d:"The data unit (TD) writes the 64 values into the wave's VGPRs. The wave has been waiting at <code>s_waitcnt vmcnt(0)</code> and can now use them.",m:"Measured on the MI250X, a load that goes all the way to HBM takes about 13.6× as long as a scalar-cache hit. Scaled by the MI210's 37.5 ns scalar hit, that is roughly half a microsecond, an estimate. The scheduler fills the wait with other waves."}]},
+ gemm:{name:"GEMM tile via LDS",t:"A matrix tile through LDS into the matrix cores",steps:[
+  {lv:"gcd",n:["hbm","fabric","l2","cu"],e:[["e_fab_hbm","ba"],["e_l2_fab","ba"],["e_cu_l2","ba"]],t:"Stream the tile",d:"Each workgroup pulls its slices of A and B from HBM through the L2."},
+  {lv:"cu",n:["vl1","tatd","simd","vgpr"],e:[["e_tatd_vl1","ba"],["e_simd_tatd","ba"]],t:"Into registers",d:"<code>global_load</code> brings the slices into VGPRs. <code>buffer_load … lds</code> can skip the registers instead, at 1, 2 or 4 bytes per lane."},
+  {lv:"cu",n:["simd","lds"],e:[["e_simd_lds","ab"]],t:"Stage in LDS",d:"<code>ds_write</code> stores the tile in LDS. An <code>s_barrier</code> holds every wave of the workgroup until the whole tile is in place."},
+  {lv:"cu",n:["lds","simd","vgpr"],e:[["e_simd_lds","ba"]],t:"Reuse from LDS",d:"Waves read the fragments they need with <code>ds_read</code>, again and again. LDS delivers 128 B per clock per CU, while the CU's fair share of HBM is about 8.6 B per clock."},
+  {lv:"cu",n:["vgpr","mfma"],e:[["e_mfma_vgpr","both"]],t:"Multiply",d:"<code>v_mfma</code> instructions multiply A and B fragments and add into the C tile, which stays in registers (often AGPRs) for the whole K loop. Peak: 1,024 FP16 FLOPs per clock per CU."},
+  {lv:"cu",n:["simd","tatd","vl1","l2out"],e:[["e_simd_tatd","ab"],["e_tatd_vl1","ab"],["e_vl1_l2","ab"]],t:"Write C",d:"After the last K step, <code>global_store</code> writes C. The vector L1 is write-through, so the stores continue to L2 and then to HBM.",m:"To keep the matrix cores busy from HBM alone, a kernel needs about 120 FP16 FLOPs per byte loaded (191.5 TFLOPS ÷ 1.6 TB/s). Reuse from LDS and registers is how GEMM kernels reach that."}]},
+ scalar:{name:"Uniform value",t:"A uniform value on the scalar path",steps:[
+  {lv:"cu",n:["scheduler","salu"],e:[["e_sched_salu","ab"]],t:"One value for 64 threads",d:"When the compiler can prove a value is the same for every thread (a kernel argument, a base address), it emits a scalar load such as <code>s_load_dword</code>."},
+  {lv:"cu",n:["scache","sgpr"],e:[["e_sc_sgpr","ab"]],t:"Scalar cache",d:"The 16 KiB scalar cache, shared with the neighboring CU, returns the value into an SGPR. Measured on the MI210, a hit takes 37.5 ns, less than half the vector L1's just over 85 ns."},
+  {lv:"cu",n:["scache","l2out"],e:[["e_sc_l2","ba"]],t:"On a miss",d:"A scalar-cache miss is filled from L2 like any other request."},
+  {lv:"cu",n:["sgpr","simd"],e:[["e_sgpr_simd","ab"]],t:"Broadcast",d:"A vector instruction reads the SGPR directly as an operand. All 64 lanes see the same value, and no VGPR space is spent on it."},
+  {lv:"cu",n:["salu","sgpr"],e:[["e_salu_sgpr","both"]],t:"Scalar work",d:"Loop counters, address arithmetic and branch conditions run on the scalar ALU once per wave, which leaves the SIMD free for per-thread work."}]},
+ peer:{name:"Peer GCD read",t:"Reading the other GCD's memory",steps:[
+  {lv:"cu",n:["simd","tatd","vl1","l2out"],e:[["e_simd_tatd","ab"],["e_tatd_vl1","ab"],["e_vl1_l2","ab"]],t:"A load to remote memory",d:"A kernel on GCD 0 reads a buffer that lives in GCD 1's HBM, with peer access enabled. The request leaves the CU like any other load."},
+  {lv:"gcd",n:["l2","fabric","peer"],e:[["e_l2_fab","ab"],["e_fab_peer","ab"]],t:"Remote traffic",d:"The L2 sends it across the Infinity Fabric toward the four links that join the two dies."},
+  {lv:"pkg",n:["gcd0","gcd1","hbm1"],e:[["e_if","both"],["e_hbm1","both"]],t:"GCD 1 answers",d:"GCD 1's memory supplies the data, which returns over the same links."},
+  {lv:"pkg",n:["gcd0","gcd1"],e:[["e_if","both"]],t:"How fast",d:"Peak is 200 GB/s each way. Pearson measured 153 GB/s with plain kernel loads and stores, but only 51 GB/s with <code>hipMemcpyAsync</code>, a ceiling he suggests comes from the DMA engine.",m:"Local HBM gives 1.6 TB/s. Reading over the peer link gets at most an eighth of that."}]},
+ host:{name:"Host copy",t:"Copying from host memory",steps:[
+  {lv:"pkg",n:["cpu","gcd0"],e:[["e_cpu0","ab"]],t:"Over the CPU link",d:"<code>hipMemcpy</code> from host to device moves the data across the CPU-GCD Infinity Fabric link, 36 GB/s each way on Frontier-class nodes."},
+  {lv:"pkg",n:["gcd0","hbm0"],e:[["e_hbm0","ab"]],t:"Into HBM",d:"The data lands in GCD 0's HBM, where kernels on GCD 0 read it at up to 1.6 TB/s."},
+  {lv:"pkg",n:["cpu","gcd0"],e:[["e_cpu0","ab"]],t:"Pin your buffers",d:"Pageable host memory is staged through a pinned buffer first. Pearson measured such copies up to 5× slower than copies from pinned memory.",m:"36 GB/s is about 1/44 of local HBM bandwidth."}]}
+};
+
+/* ---------------- helpers ---------------- */
+function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);if(attrs)for(var k in attrs){if(attrs[k]!=null)e.setAttribute(k,attrs[k]);}if(parent)parent.appendChild(e);return e;}
+function seedOf(s){var h=7;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))%100003;}return h+1;}
+function rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);return "M"+(x+r)+" "+y+" H"+(x+w-r)+" Q"+(x+w)+" "+y+" "+(x+w)+" "+(y+r)+" V"+(y+h-r)+" Q"+(x+w)+" "+(y+h)+" "+(x+w-r)+" "+(y+h)+" H"+(x+r)+" Q"+x+" "+(y+h)+" "+x+" "+(y+h-r)+" V"+(y+r)+" Q"+x+" "+y+" "+(x+r)+" "+y+" Z";}
+function sketch(rc,d,o){
+  var g;
+  if(rc){
+    var opt={stroke:"currentColor",strokeWidth:o.sw||1.6,roughness:o.rough==null?1:o.rough,bowing:o.bow==null?1:o.bow,seed:o.seed||1};
+    if(o.dash)opt.strokeLineDash=o.dash;
+    if(o.single)opt.disableMultiStroke=true;
+    try{g=rc.path(d,opt);}catch(err){g=null;}
+  }
+  if(!g){g=el("g");var p=el("path",{d:d,fill:"none",stroke:"currentColor","stroke-width":o.sw||1.6,"stroke-linecap":"round","stroke-linejoin":"round"},g);if(o.dash)p.setAttribute("stroke-dasharray",o.dash.join(" "));}
+  return g;
+}
+function txt(parent,x,y,s,cls,anchor,maxw){var t=el("text",{x:x,y:y,"class":cls,"text-anchor":anchor||"middle"},parent);t.textContent=s;if(maxw)t.setAttribute("data-maxw",maxw);return t;}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+/* ---------------- build diagrams ---------------- */
+var canvas=document.getElementById("canvas");
+var SV={}, FITTED={}, NODE={}, EDGE={};
+function buildLevel(key){
+  var L=LV[key];
+  var svg=el("svg",{"class":"dg",viewBox:"0 0 "+L.vb[0]+" "+L.vb[1],role:"group","aria-label":L.name+" diagram",id:"svg-"+key,hidden:""});
+  canvas.appendChild(svg);
+  var rc=window.rough?window.rough.svg(svg):null;
+  var defs=el("defs",null,svg);
+  ["memory","fabric","control","compute"].forEach(function(k){
+    var m=el("marker",{id:"ah-"+k+"-"+key,viewBox:"0 0 10 10",refX:"8.6",refY:"5",markerWidth:"11",markerHeight:"11",markerUnits:"userSpaceOnUse",orient:"auto-start-reverse"},defs);
+    el("path",{d:"M1.2 1.2 L9 5 L1.2 8.8 Z","class":"mk mk-"+k},m);
+  });
+  var gE=el("g",{"class":"edges"},svg), gN=el("g",{"class":"nodes"},svg), gT=el("g",{"class":"notes"},svg), gL=el("g",{"class":"elabels"},svg);
+  L.nodes.forEach(function(n){
+    NODE[n.id]=n;
+    var g=el("g",{"class":"node k-"+n.kind,"data-id":n.id,tabindex:"0",role:"button","aria-pressed":"false","aria-label":n.aria||((INFO[n.id]&&INFO[n.id].t)||n.label)+(n.sub?", "+n.sub:"")},gN);
+    var rects=n.rects||[{x:n.x,y:n.y,w:n.w,h:n.h,label:n.label,sub:n.sub,r:n.r,lblAt:n.lblAt}];
+    rects.forEach(function(r,i){
+      var rad=r.r!=null?r.r:(n.r!=null?n.r:12);
+      el("rect",{"class":"hit",x:r.x,y:r.y,width:r.w,height:r.h,rx:rad},g);
+      var dash=(r.dashed||n.dashed)?[8,7]:null;
+      var sk=sketch(rc,rr(r.x,r.y,r.w,r.h,rad),{sw:n.tiles?1.1:(n.sw||(n.kind==="group"?1.3:1.7)),rough:n.tiles?0.7:(n.kind==="group"?0.8:1.05),bow:n.tiles?0.5:0.9,seed:seedOf(n.id)+i*13,dash:dash});
+      sk.setAttribute("class","sketch");g.appendChild(sk);
+      if(r.glyphs){
+        el("rect",{"class":"glyph",x:r.x+14,y:r.y+78,width:46,height:36,rx:5},g);
+        el("rect",{"class":"glyph",x:r.x+68,y:r.y+78,width:46,height:36,rx:5},g);
+        var gv=el("rect",{"class":"glyph",x:r.x+14,y:r.y+124,width:100,height:40,rx:5},g);gv.style.color="var(--memory)";
+      }
+      if(r.label){
+        var at=r.lblAt||n.lblAt||"center";
+        if(at==="tl"){
+          txt(g,r.x+12,r.y+(r.small?21:25),r.label,"lbl"+(r.small?" sm":""),"start",r.w-24);
+          if(r.sub)txt(g,r.x+12,r.y+45,r.sub,"sub","start",r.w-22);
+        }else if(at==="br"){
+          txt(g,r.x+r.w-22,r.y+r.h-14,r.label,"lbl sm","end",r.w-40);
+        }else if(n.inline){
+          txt(g,r.x+r.w/2,r.y+r.h/2-4,r.label,"lbl","middle",r.w-30);
+          if(r.sub)txt(g,r.x+r.w/2,r.y+r.h/2+15,r.sub,"sub","middle",r.w-30);
+        }else if(n.channels){
+          txt(g,r.x+r.w/2,r.y+26,r.label,"lbl","middle",r.w-30);
+          txt(g,r.x+r.w/2,r.y+46,r.sub,"sub","middle",r.w-30);
+        }else if(r.sub){
+          var cy=r.y+r.h/2;
+          txt(g,r.x+r.w/2,cy-4,r.label,"lbl","middle",r.w-20);
+          txt(g,r.x+r.w/2,cy+16,r.sub,"sub","middle",r.w-16);
+        }else{
+          txt(g,r.x+r.w/2,r.y+r.h/2+6.5,r.label,"lbl","middle",r.w-20);
+        }
+      }
+    });
+    if(n.channels){
+      var cw=(n.w-32)/n.channels;
+      for(var c=0;c<n.channels;c++) el("rect",{"class":"chan",x:(n.x+16+c*cw+1.5).toFixed(2),y:n.y+56,width:(cw-3).toFixed(2),height:10,rx:2},g);
+    }
+    g.addEventListener("click",function(ev){ev.stopPropagation();choose("node",n.id);});
+    g.addEventListener("keydown",function(ev){if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();choose("node",n.id);}});
+    g.addEventListener("dblclick",function(){var I=INFO[n.id];if(I&&I.zoom)zoomTo(I.zoom);});
+  });
+  L.edges.forEach(function(e){
+    EDGE[e.id]=e;
+    var g=el("g",{"class":"edge k-"+e.kind,"data-id":e.id},gE);
+    e.d.forEach(function(d,i){
+      var sk=sketch(rc,d,{sw:e.w||1.6,rough:0.55,bow:0.4,seed:seedOf(e.id)+i*7,dash:e.dashed?[6,5]:null,single:true});
+      sk.setAttribute("class","line");g.appendChild(sk);
+      el("path",{"class":"wire",d:d},g);
+      var h=el("path",{"class":"ehit",d:d},g);
+      h.addEventListener("click",function(ev){ev.stopPropagation();choose("edge",e.id);});
+    });
+    el("g",{"class":"flow k-"+e.kind},g);
+    if(e.label){var t=txt(gL,e.lx,e.ly,e.label,"elabel",e.anchor||"start");t.setAttribute("data-for",e.id);}
+  });
+  (L.notes||[]).forEach(function(nt){txt(gT,nt.x,nt.y,nt.t,"note",nt.anchor||"middle");});
+  SV[key]=svg;
+}
+function fit(svg){
+  var list=svg.querySelectorAll("text[data-maxw]");
+  for(var i=0;i<list.length;i++){
+    var t=list[i],mw=+t.getAttribute("data-maxw");t.style.fontSize="";
+    var len=t.getComputedTextLength();
+    if(len>mw&&len>0){var fs=parseFloat(getComputedStyle(t).fontSize);t.style.fontSize=Math.max(9,fs*mw/len).toFixed(2)+"px";}
+  }
+}
+
+/* ---------------- state ---------------- */
+var state={level:"gcd",sel:{type:"node",id:"l2"},tour:null};
+var panel=document.getElementById("panel"), cap=document.getElementById("cap"), statusEl=document.getElementById("status");
+var tabs=[].slice.call(document.querySelectorAll(".levels button"));
+var selname=document.getElementById("selname");
+document.getElementById("tojump").addEventListener("click",function(){panel.scrollIntoView({behavior:RM?"auto":"smooth",block:"start"});});
+function revealSel(){
+  /* on narrow screens the diagram scrolls sideways: bring the highlighted blocks into view */
+  if(canvas.scrollWidth<=canvas.clientWidth+2)return;
+  var svg=SV[state.level], vb=LV[state.level].vb[0], scale=svg.getBoundingClientRect().width/vb;
+  var xs=[];
+  [].forEach.call(svg.querySelectorAll(".node.is-sel .hit, .edge.is-sel .wire, .edge.is-on .wire"),function(n){try{var b=n.getBBox();xs.push(b.x,b.x+b.width);}catch(e){}});
+  if(!xs.length)return;
+  var lo=Math.min.apply(null,xs)*scale, hi=Math.max.apply(null,xs)*scale, mid=(lo+hi)/2;
+  var target=Math.max(0,Math.min(canvas.scrollWidth-canvas.clientWidth,mid-canvas.clientWidth/2));
+  if(canvas.scrollTo)canvas.scrollTo({left:target,behavior:RM?"auto":"smooth"});else canvas.scrollLeft=target;
+}
+var tourBtns=[].slice.call(document.querySelectorAll(".tours button"));
+var waveTimer=null;
+
+function edgesOf(lv){return LV[lv].edges;}
+function apply(){
+  var L=LV[state.level], svg=SV[state.level];
+  var sel={},nbr={},ctx={},on={},selEdge=null;
+  if(state.tour){
+    var st=TOURS[state.tour.key].steps[state.tour.i];
+    st.n.forEach(function(id){sel[id]=1;});
+    st.e.forEach(function(p){on[p[0]]=p[1];});
+  }else if(state.sel.type==="node"){
+    sel[state.sel.id]=1;
+    L.edges.forEach(function(e){if(e.a===state.sel.id||e.b===state.sel.id){on[e.id]=e.dir;nbr[e.a===state.sel.id?e.b:e.a]=1;}});
+  }else{
+    var E=EDGE[state.sel.id];on[E.id]=E.dir;nbr[E.a]=1;nbr[E.b]=1;selEdge=E.id;
+  }
+  L.nodes.forEach(function(n){
+    if(n.parent&&(sel[n.id]||nbr[n.id]))ctx[n.parent]=1;
+    if(n.parent&&sel[n.parent])ctx[n.id]=1;
+  });
+  svg.classList.add("has-sel");
+  [].forEach.call(svg.querySelectorAll(".node"),function(g){
+    var id=g.getAttribute("data-id");
+    g.classList.toggle("is-sel",!!sel[id]);g.classList.toggle("is-nbr",!!nbr[id]);g.classList.toggle("is-ctx",!!ctx[id]);
+    g.setAttribute("aria-pressed",sel[id]?"true":"false");
+  });
+  [].forEach.call(svg.querySelectorAll(".edge"),function(g){
+    var id=g.getAttribute("data-id"),E=EDGE[id],dir=on[id];
+    g.classList.toggle("is-on",!!dir);g.classList.toggle("is-sel",selEdge===id);
+    var flow=g.querySelector(".flow");while(flow.firstChild)flow.removeChild(flow.firstChild);
+    [].forEach.call(g.querySelectorAll(".wire"),function(w){
+      w.removeAttribute("marker-end");w.removeAttribute("marker-start");
+      if(!dir)return;
+      var mk="url(#ah-"+E.kind+"-"+state.level+")";
+      if(dir==="ab"||dir==="both")w.setAttribute("marker-end",mk);
+      if(dir==="ba"||dir==="both")w.setAttribute("marker-start",mk);
+      if(RM)return;
+      var len=w.getTotalLength(), dur=Math.max(0.9,Math.min(2.6,len/70));
+      var dirs=dir==="both"?["ab","ba"]:[dir];
+      dirs.forEach(function(dd,k){
+        for(var j=0;j<2;j++){
+          var c=el("circle",{r:"3.6"},flow);
+          var a=el("animateMotion",{dur:dur.toFixed(2)+"s",repeatCount:"indefinite",path:w.getAttribute("d"),begin:(-(j*dur/2+k*dur/4)).toFixed(2)+"s",calcMode:"linear"},c);
+          if(dd==="ba"){a.setAttribute("keyPoints","1;0");a.setAttribute("keyTimes","0;1");}
+        }
+      });
+    });
+  });
+  [].forEach.call(svg.querySelectorAll(".elabel"),function(t){t.classList.toggle("on",!!on[t.getAttribute("data-for")]);});
+}
+
+function setLevel(lv,opt){
+  opt=opt||{};
+  state.level=lv;
+  tabs.forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-level")===lv?"true":"false");b.tabIndex=b.getAttribute("data-level")===lv?0:-1;});
+  Object.keys(SV).forEach(function(k){if(k===lv)SV[k].removeAttribute("hidden");else SV[k].setAttribute("hidden","");});
+  canvas.setAttribute("aria-labelledby","tab-"+lv);
+  if(!FITTED[lv]){fit(SV[lv]);FITTED[lv]=1;}
+  cap.textContent=LV[lv].cap;
+  if(!state.tour){state.sel=opt.sel||{type:"node",id:LV[lv].def};}
+  apply();renderPanel();
+}
+function choose(type,id){
+  if(state.tour){state.tour=null;syncTourBtns();}
+  state.sel={type:type,id:id};apply();renderPanel();
+}
+function zoomTo(z){
+  if(state.tour){state.tour=null;syncTourBtns();}
+  setLevel(z.to,{sel:z.sel?{type:z.selType||"node",id:z.sel}:null});
+  var s=SV[z.to].querySelector('.node[data-id="'+(z.sel||LV[z.to].def)+'"]');
+  if(s&&s.focus){try{s.focus({preventScroll:true});}catch(e){}}
+}
+
+/* ---------------- panel ---------------- */
+function refs(keys){return '<sup class="refs">'+keys.map(function(k){var s=SRC[SN[k]-1];return EMBED?'<a href="'+s.u+'" target="_blank" rel="noopener" title="'+esc(s.t)+'">'+SN[k]+'</a>':'<a href="#src-'+SN[k]+'" title="'+esc(s.t)+'">'+SN[k]+'</a>';}).join(",")+'</sup>';}
+function specsHTML(rows){
+  if(!rows||!rows.length)return "";
+  return '<dl class="specs">'+rows.map(function(r){
+    return '<div class="spec"><dt>'+esc(r[0])+'</dt><dd><span class="v">'+esc(r[1])+'</span><span class="meta"><span class="tag t-'+r[2]+'">'+TAG[r[2]]+'</span>'+refs(r[3])+(r[4]?'<span class="f">'+esc(r[4])+'</span>':'')+'</span></dd></div>';
+  }).join("")+'</dl>';
+}
+function nameOf(id){var I=INFO[id];return I?I.t:id;}
+function connHTML(id){
+  var list=edgesOf(state.level).filter(function(e){return e.a===id||e.b===id;});
+  if(!list.length)return "";
+  return '<h4>Connects to</h4><ul class="conns">'+list.map(function(e){
+    var other=e.a===id?e.b:e.a, arrow;
+    if(e.dir==="both")arrow="⇄";else{var fromMe=(e.dir==="ab")===(e.a===id);arrow=fromMe?"→":"←";}
+    var num='<button type="button" class="numbtn" data-edge="'+e.id+'">'+esc(e.num||e.label||"about this link")+'</button>';
+    return '<li><span class="dir" aria-hidden="true">'+arrow+'</span><span><button type="button" class="linkbtn" data-sel="'+other+'">'+esc(nameOf(other))+'</button>'+num+'</span></li>';
+  }).join("")+'</ul>';
+}
+function waveHTML(){return '<div class="wave" role="img" aria-label="A 64-thread wavefront runs on 16 lanes in four passes, one per cycle"><div class="wave-grid" id="wgrid">'+new Array(65).join("<i></i>")+'</div><p id="wcap">Cycle <b>1</b> of 4: threads 0 to 15 run on the 16 lanes.</p></div>';}
+function occHTML(){return '<div class="occ"><label for="occ-r">Registers per lane (VGPR + AGPR) <output id="occ-o">128</output></label><input type="range" id="occ-r" min="8" max="512" step="8" value="128"><div class="slots" id="occ-s" aria-hidden="true">'+new Array(9).join("<i></i>")+'</div><p id="occ-p"></p></div>';}
+function startViz(kind){
+  if(waveTimer){clearInterval(waveTimer);waveTimer=null;}
+  if(kind==="wave"){
+    var cells=[].slice.call(document.querySelectorAll("#wgrid i")), capEl=document.getElementById("wcap"), cyc=0;
+    var draw=function(){cells.forEach(function(c,i){var row=Math.floor(i/16);c.className=row===cyc?"on":(row<cyc?"done":"");});capEl.innerHTML="Cycle <b>"+(cyc+1)+"</b> of 4: threads "+(cyc*16)+" to "+(cyc*16+15)+" run on the 16 lanes.";};
+    draw();
+    if(!RM)waveTimer=setInterval(function(){cyc=(cyc+1)%4;draw();},900);
+  }
+  if(kind==="occ"){
+    var r=document.getElementById("occ-r"),o=document.getElementById("occ-o"),s=[].slice.call(document.querySelectorAll("#occ-s i")),p=document.getElementById("occ-p");
+    var upd=function(){var v=+r.value,w=Math.min(8,Math.floor(512/v));o.textContent=v;s.forEach(function(x,i){x.className=i<w?"on":"";});p.innerHTML="<b>"+w+"</b> wave"+(w>1?"s":"")+" per SIMD, "+(w*4)+" per CU. Registers alone; LDS use and workgroup size can lower this further.";};
+    r.addEventListener("input",upd);upd();
+  }
+}
+function wirePanel(){
+  [].forEach.call(panel.querySelectorAll("[data-sel]"),function(b){b.addEventListener("click",function(){choose("node",b.getAttribute("data-sel"));});});
+  [].forEach.call(panel.querySelectorAll("[data-edge]"),function(b){b.addEventListener("click",function(){choose("edge",b.getAttribute("data-edge"));});});
+  [].forEach.call(panel.querySelectorAll("[data-zoom]"),function(b){b.addEventListener("click",function(){zoomTo({to:b.getAttribute("data-zoom"),sel:b.getAttribute("data-zsel")||null,selType:b.getAttribute("data-ztype")||"node"});});});
+}
+function renderPanel(){
+  if(waveTimer){clearInterval(waveTimer);waveTimer=null;}
+  var h="";
+  if(state.tour){
+    var T=TOURS[state.tour.key], i=state.tour.i, st=T.steps[i];
+    h+='<p class="kick"><span class="chip k-memory">Follow the data</span><span>'+esc(T.name)+'</span></p>';
+    h+='<h3 class="ptitle">'+esc(T.t)+'</h3>';
+    h+='<ol class="steps" aria-label="Step '+(i+1)+' of '+T.steps.length+'">'+T.steps.map(function(x,k){return '<li class="'+(k<i?"done":(k===i?"now":""))+'"></li>';}).join("")+'</ol>';
+    h+='<h4>Step '+(i+1)+' of '+T.steps.length+' · '+esc(LV[st.lv].name)+' view</h4>';
+    h+='<p style="font:600 1.0625rem/1.35 var(--font-body)">'+esc(st.t)+'</p><p>'+st.d+'</p>';
+    if(st.m)h+='<p class="metric">'+st.m+'</p>';
+    h+='<div class="btnrow"><button type="button" class="ghost" id="t-prev"'+(i===0?" disabled":"")+'>Back</button><button type="button" class="zoom" id="t-next">'+(i===T.steps.length-1?"Finish":"Next step")+'</button><button type="button" class="ghost" id="t-exit">Exit</button></div>';
+    panel.innerHTML=h;
+    document.getElementById("t-prev").addEventListener("click",function(){if(state.tour.i>0){state.tour.i--;goStep();}});
+    document.getElementById("t-next").addEventListener("click",function(){if(state.tour.i<T.steps.length-1){state.tour.i++;goStep();}else endTour();});
+    document.getElementById("t-exit").addEventListener("click",endTour);
+    statusEl.textContent=T.name+", step "+(i+1)+": "+st.t;
+    selname.textContent=T.name+", step "+(i+1)+" of "+T.steps.length;revealSel();
+    return;
+  }
+  var id=state.sel.id, I=INFO[id]||{t:id,kind:"group",specs:[]};
+  var isEdge=state.sel.type==="edge";
+  h+='<p class="kick"><span class="chip k-'+I.kind+'">'+(isEdge?"Link":KIND[I.kind])+'</span><span>'+esc(isEdge?(KIND[I.kind]+" · "+LV[state.level].name+" view"):(I.kick||""))+'</span></p>';
+  h+='<h3 class="ptitle">'+esc(I.t)+'</h3>';
+  if(I.sum)h+='<p class="psum">'+esc(I.sum)+'</p>';
+  h+=specsHTML(I.specs);
+  if(isEdge){
+    var E=EDGE[id];
+    h+='<h4>Joins</h4><ul class="conns"><li><span class="dir" aria-hidden="true">'+(E.dir==="both"?"⇄":(E.dir==="ab"?"→":"←"))+'</span><span><button type="button" class="linkbtn" data-sel="'+E.a+'">'+esc(nameOf(E.a))+'</button> and <button type="button" class="linkbtn" data-sel="'+E.b+'">'+esc(nameOf(E.b))+'</button></span></li></ul>';
+  }else h+=connHTML(id);
+  if(I.how&&I.how.length)h+='<h4>How it works</h4>'+I.how.map(function(p){return '<p>'+p+'</p>';}).join("");
+  if(I.viz==="wave")h+=waveHTML();
+  if(I.viz==="occ")h+=occHTML();
+  if(I.analog)h+='<p class="analog"><span>Compared with NVIDIA</span>'+esc(I.analog)+'</p>';
+  if(I.zoom)h+='<button type="button" class="zoom" data-zoom="'+I.zoom.to+'" data-zsel="'+(I.zoom.sel||"")+'" data-ztype="'+(I.zoom.selType||"node")+'">'+esc(I.zoom.label)+' →</button>';
+  panel.innerHTML=h;wirePanel();startViz(I.viz);
+  statusEl.textContent=I.t;selname.textContent=I.t;revealSel();
+}
+
+/* ---------------- tours ---------------- */
+function syncTourBtns(){tourBtns.forEach(function(b){b.setAttribute("aria-pressed",state.tour&&state.tour.key===b.getAttribute("data-tour")?"true":"false");});}
+function goStep(){
+  var st=TOURS[state.tour.key].steps[state.tour.i];
+  if(st.lv!==state.level)setLevel(st.lv);else{apply();renderPanel();}
+}
+function startTour(k){state.tour={key:k,i:0};syncTourBtns();goStep();}
+function endTour(){var lv=state.level;state.tour=null;syncTourBtns();state.sel={type:"node",id:LV[lv].def};apply();renderPanel();}
+
+/* ---------------- charts ---------------- */
+var tip=document.getElementById("tip");
+function showTip(html,ev,anchor){
+  tip.innerHTML=html;tip.hidden=false;
+  var x,y;
+  if(ev&&ev.clientX!=null){x=ev.clientX+14;y=ev.clientY+14;}else{var r=anchor.getBoundingClientRect();x=r.left+12;y=r.bottom+6;}
+  var w=tip.offsetWidth,h=tip.offsetHeight;
+  if(x+w>window.innerWidth-8)x=Math.max(8,window.innerWidth-w-8);
+  if(y+h>window.innerHeight-8)y=Math.max(8,(ev&&ev.clientY!=null?ev.clientY:y)-h-12);
+  tip.style.left=x+"px";tip.style.top=y+"px";
+}
+function hideTip(){tip.hidden=true;}
+function rbar(x0,x1,y,h,dirRight){
+  var r=4,len=Math.abs(x1-x0);if(len<0.5)return "";r=Math.min(r,len,h/2);
+  if(dirRight)return "M"+x0+" "+y+" H"+(x1-r)+" Q"+x1+" "+y+" "+x1+" "+(y+r)+" V"+(y+h-r)+" Q"+x1+" "+(y+h)+" "+(x1-r)+" "+(y+h)+" H"+x0+" Z";
+  return "M"+x0+" "+y+" H"+(x1+r)+" Q"+x1+" "+y+" "+x1+" "+(y+r)+" V"+(y+h-r)+" Q"+x1+" "+(y+h)+" "+(x1+r)+" "+(y+h)+" H"+x0+" Z";
+}
+var MiB=1, GiB=1024;
+var ROWS=[
+ {n:"VGPR + AGPR",cap:55,capL:"55 MiB",bw:null,bwL:"not published",lat:"none: instructions read registers directly",per:"128 KiB per SIMD",go:{to:"cu",sel:"vgpr"},src:["specs","lumi"],fab:false},
+ {n:"LDS",cap:6.875,capL:"6.9 MiB",bw:23.94,bwL:"23.9 TB/s",lat:"a little below 37.5 ns (MI210)",per:"64 KiB per CU · 128 B/clk",go:{to:"cu",sel:"lds"},src:["specs","perf","mi210"],fab:false},
+ {n:"Vector L1",cap:1.71875,capL:"1.7 MiB",bw:11.97,bwL:"12.0 TB/s",lat:"just over 85 ns (MI210)",per:"16 KiB per CU · 64 B/clk",go:{to:"cu",sel:"vl1"},src:["specs","cdna3","mi210"],fab:false},
+ {n:"L2",cap:8,capL:"8 MiB",bw:6.96,bwL:"6.96 TB/s",lat:"≈ 4.1× scalar hit (MI250X)",per:"one per GCD · 32 channels",go:{to:"gcd",sel:"l2"},src:["specs","lumi","mall"],fab:false},
+ {n:"HBM2e",cap:64*GiB,capL:"64 GiB",bw:1.6,bwL:"1.6 TB/s",lat:"≈ 13.6× scalar hit (MI250X)",per:"4 stacks",go:{to:"gcd",sel:"hbm"},src:["specs","mi250","mall"],fab:false},
+ {n:"GCD 1's HBM (via IF)",cap:64*GiB,capL:"64 GiB",bw:0.2,bwL:"200 GB/s",lat:"not measured here",per:"over 4 in-package links, each way",go:{to:"pkg",sel:"e_if",selType:"edge"},src:["mi250"],fab:true},
+ {n:"Host DDR4 (via link)",cap:512*GiB,capL:"512 GiB / node",bw:0.036,bwL:"36 GB/s",lat:"not measured here",per:"over 1 CPU link, each way",go:{to:"pkg",sel:"e_cpu0",selType:"edge"},src:["lumi","olcf"],fab:true}
+];
+function buildStairs(){
+  var W=940,top=46,rowH=46,H=top+ROWS.length*rowH+8;
+  var Lb=372,Rb=568,span=330;
+  var capX=function(v){return Lb-Math.log2(v/1)/20*span;};      /* 1 MiB .. 1 TiB */
+  var bwX=function(v){return Rb+Math.log10(v/0.01)/4*span;};     /* 10 GB/s .. 100 TB/s */
+  var svg=el("svg",{"class":"cx",viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"Capacity and peak bandwidth per GCD for each memory level"});
+  var capT=[[1,"1 MiB"],[32,"32 MiB"],[1024,"1 GiB"],[32768,"32 GiB"],[1048576,"1 TiB"]];
+  var bwT=[[0.01,"10 GB/s"],[0.1,"100 GB/s"],[1,"1 TB/s"],[10,"10 TB/s"],[100,"100 TB/s"]];
+  capT.forEach(function(t){var x=capX(t[0]);el("line",{"class":"grid",x1:x,x2:x,y1:top-8,y2:H-6},svg);txt(svg,x,top-16,t[1],"tick","middle");});
+  bwT.forEach(function(t){var x=bwX(t[0]);el("line",{"class":"grid",x1:x,x2:x,y1:top-8,y2:H-6},svg);txt(svg,x,top-16,t[1],"tick","middle");});
+  el("line",{"class":"base",x1:Lb,x2:Lb,y1:top-8,y2:H-6},svg);el("line",{"class":"base",x1:Rb,x2:Rb,y1:top-8,y2:H-6},svg);
+  ROWS.forEach(function(r,i){
+    var y=top+i*rowH, g=el("g",{"class":"row",tabindex:"0",role:"button","aria-label":r.n+": "+r.capL+" capacity, "+r.bwL+" peak bandwidth. Show in diagram."},svg);
+    el("rect",{"class":"bg",x:4,y:y+2,width:W-8,height:rowH-4,rx:8},g);
+    var bh=18, by=y+(rowH-bh)/2, cls=r.fab?"bar-fab":"bar-mem";
+    el("path",{"class":cls,d:rbar(Lb,capX(r.cap),by,bh,false)},g);
+    if(r.bw!=null)el("path",{"class":cls,d:rbar(Rb,bwX(r.bw),by,bh,true)},g);
+    else txt(g,Rb+10,by+13,"not published","na","start");
+    txt(g,(Lb+Rb)/2,y+21,r.n,"rname","middle",Rb-Lb-14);
+    txt(g,(Lb+Rb)/2,y+37,r.capL+" · "+r.bwL,"rval","middle",Rb-Lb-10);
+    var html="<b>"+esc(r.n)+"</b><br>Capacity "+esc(r.capL)+" ("+esc(r.per)+")<br>Peak bandwidth "+esc(r.bwL)+"<br>Latency "+esc(r.lat)+"<br><span class='m'>"+(EMBEDMODE==="hierarchy"?"Click to open it in the full diagram ↗":"Click to find it in the diagram")+"</span>";
+    g.addEventListener("mousemove",function(ev){showTip(html,ev);});
+    g.addEventListener("mouseleave",hideTip);
+    g.addEventListener("focus",function(){showTip(html,null,g);});
+    g.addEventListener("blur",hideTip);
+    var go=function(){hideTip();if(EMBEDMODE==="hierarchy"){window.open("mi250x-anatomy.html#"+r.go.to+(r.go.sel?"/"+r.go.sel+(r.go.selType==="edge"?"/edge":""):""),"_blank","noopener");return;}zoomTo(r.go);document.getElementById("explore").scrollIntoView({behavior:RM?"auto":"smooth",block:"start"});};
+    g.addEventListener("click",go);
+    g.addEventListener("keydown",function(ev){if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go();}});
+  });
+  txt(svg,Lb-6,top-32,"← more capacity","axt","end");
+  txt(svg,Rb+6,top-32,"more bandwidth →","axt","start");
+  document.getElementById("stairs").appendChild(svg);
+  fit(svg);
+  var tb='<table><thead><tr><th>Level</th><th>Capacity per GCD</th><th>Unit size</th><th>Peak bandwidth per GCD</th><th>Latency</th><th>Sources</th></tr></thead><tbody>';
+  ROWS.forEach(function(r){tb+='<tr><td>'+esc(r.n)+'</td><td class="n">'+esc(r.capL)+'</td><td>'+esc(r.per)+'</td><td class="n">'+esc(r.bwL)+'</td><td>'+esc(r.lat)+'</td><td>'+refs(r.src)+'</td></tr>';});
+  tb+='</tbody></table>';
+  document.getElementById("stairs-table").innerHTML=tb;
+}
+function hbars(id,rows,max,ticks,unit,opts){
+  opts=opts||{};
+  var W=560,lab=150,pl=lab+8,pr=W-70,rowH=34,top=22,H=top+rows.length*rowH+6;
+  var X=function(v){return pl+v/max*(pr-pl);};
+  var svg=el("svg",{"class":"cx",viewBox:"0 0 "+W+" "+H,role:"img","aria-label":opts.aria||""});
+  ticks.forEach(function(t){var x=X(t);el("line",{"class":"grid",x1:x,x2:x,y1:top-4,y2:H-4},svg);txt(svg,x,top-9,t+(opts.tickUnit||""),"tick","middle");});
+  el("line",{"class":"base",x1:pl,x2:pl,y1:top-4,y2:H-4},svg);
+  rows.forEach(function(r,i){
+    var y=top+i*rowH, bh=16, by=y+(rowH-bh)/2;
+    var g=el("g",{"class":"row",tabindex:"0"},svg);
+    el("rect",{"class":"bg",x:2,y:y+2,width:W-4,height:rowH-4,rx:7},g);
+    txt(g,lab,by+12.5,r.n,"axt","end",lab-6);
+    if(r.v!=null){el("path",{"class":"bar-mem",d:rbar(pl,X(r.v),by,bh,true)},g);txt(g,X(r.v)+7,by+12.5,r.l,"vlab","start");}
+    else txt(g,pl+8,by+12.5,r.l,"na","start");
+    if(r.tip){g.addEventListener("mousemove",function(ev){showTip(r.tip,ev);});g.addEventListener("mouseleave",hideTip);g.addEventListener("focus",function(){showTip(r.tip,null,g);});g.addEventListener("blur",hideTip);}
+  });
+  var host=document.getElementById(id);host.appendChild(svg);fit(svg);
+}
+function buildBudget(){
+  hbars("budget",[
+   {n:"LDS",v:128,l:"128 B",tip:"<b>LDS</b><br>32 banks × 4 B per clock<span class='m'><br>docs</span>"},
+   {n:"Vector L1",v:64,l:"64 B",tip:"<b>Vector L1</b><br>64 B per clock per CU<span class='m'><br>analysis (Chips and Cheese)</span>"},
+   {n:"L2, fair share",v:37.2,l:"≈ 37 B",tip:"<b>L2, all 110 CUs busy</b><br>4,096 B/clk ÷ 110 CUs<span class='m'><br>derived</span>"},
+   {n:"HBM, fair share",v:8.6,l:"≈ 8.6 B",tip:"<b>HBM2e, all 110 CUs busy</b><br>1.6 TB/s ÷ 1.7 GHz ÷ 110 CUs<span class='m'><br>derived</span>"}
+  ],128,[0,32,64,96,128],"B",{tickUnit:" B",aria:"Bytes per clock available to one CU from LDS, vector L1, L2 and HBM"});
+  document.getElementById("budget-cap").innerHTML='Bytes per clock for one CU, assuming all 110 share L2 and HBM evenly. The matrix cores can consume 1,024 FP16 FLOPs per clock per CU, so data from HBM has to be reused about 120 times to keep them busy; LDS and registers are where that reuse happens.'+refs(["perf","cdna3","lumi","mi250"]);
+}
+function buildLatency(){
+  hbars("lat",[
+   {n:"Scalar cache",v:1,l:"1×",tip:"<b>Scalar cache hit</b><br>baseline<span class='m'><br>measured, MI250X</span>"},
+   {n:"L2",v:4.09,l:"4.09×",tip:"<b>L2 hit</b><br>4.09× the scalar-cache hit<span class='m'><br>measured, MI250X</span>"},
+   {n:"HBM2e",v:13.64,l:"13.64×",tip:"<b>HBM2e</b><br>13.64× the scalar-cache hit<span class='m'><br>measured, MI250X</span>"}
+  ],14,[0,2,4,6,8,10,12,14],"×",{tickUnit:"×",aria:"MI250X latency relative to a scalar-cache hit: L2 4.09 times, HBM 13.64 times"});
+  hbars("lat2",[
+   {n:"LDS",v:null,l:"a little faster than the scalar cache",tip:"<b>LDS</b><br>much faster than the vector L1, a little faster than the scalar cache<span class='m'><br>measured, MI210</span>"},
+   {n:"Scalar cache",v:37.5,l:"37.5 ns",tip:"<b>Scalar cache hit</b><br>37.5 ns<span class='m'><br>measured, MI210</span>"},
+   {n:"Vector L1",v:85,l:"just over 85 ns",tip:"<b>Vector L1 hit</b><br>just over 85 ns<span class='m'><br>measured, MI210</span>"}
+  ],100,[0,25,50,75,100],"ns",{tickUnit:" ns",aria:"MI210 first-level hit latency: scalar cache 37.5 ns, vector L1 just over 85 ns"});
+  document.getElementById("lat-cap").innerHTML='Single-thread pointer chasing. Top: Tee measured the MI250X in clock cycles and reports each level relative to a scalar-cache hit'+refs(["mall"])+'. Bottom: Chips and Cheese measured nanoseconds on the MI210, whose CU is the same design'+refs(["mi210"])+'. Scaling the top chart by 37.5 ns suggests roughly 150 ns for L2 and 510 ns for HBM, but that mixes two studies and two GPUs, so read it as an estimate.';
+}
+function buildSources(){
+  document.getElementById("srclist").innerHTML=SRC.map(function(s,i){return '<li id="src-'+(i+1)+'"><a href="'+s.u+'" target="_blank" rel="noopener">'+esc(s.t)+'</a> <span class="org">· '+esc(s.o)+'</span><span class="use">'+esc(s.use)+'</span></li>';}).join("");
+}
+
+/* ---------------- boot ---------------- */
+function boot(){
+  ["pkg","gcd","cu"].forEach(buildLevel);
+  tabs.forEach(function(b){
+    b.addEventListener("click",function(){if(state.tour){state.tour=null;syncTourBtns();}setLevel(b.getAttribute("data-level"));});
+    b.addEventListener("keydown",function(ev){
+      var i=tabs.indexOf(b);
+      if(ev.key==="ArrowRight"||ev.key==="ArrowLeft"){ev.preventDefault();var n=tabs[(i+(ev.key==="ArrowRight"?1:tabs.length-1))%tabs.length];n.focus();n.click();}
+    });
+  });
+  tourBtns.forEach(function(b){b.addEventListener("click",function(){var k=b.getAttribute("data-tour");if(state.tour&&state.tour.key===k)endTour();else startTour(k);});});
+  var hp=(location.hash||"").replace("#","").split("/");
+  var start=LV[hp[0]]?hp[0]:"gcd", hs=hp[1]||null, ht=hp[2]==="edge"?"edge":"node";
+  var ok=!!hs&&(ht==="edge"?LV[start].edges.some(function(e){return e.id===hs;}):!!SV[start].querySelector('.node[data-id="'+hs+'"]'));
+  setLevel(start,ok?{sel:{type:ht,id:hs}}:undefined);
+  if(EMBEDMODE==="hierarchy"){var hl=document.getElementById("hier-lede");if(hl)hl.textContent="Every step away from the ALUs buys capacity and costs bandwidth and latency. All figures are for one GCD. Hover a row for its latency; click it to open that block in the full diagram.";}
+  buildStairs();buildBudget();buildLatency();buildSources();
+  var refit=function(){FITTED={};FITTED[state.level]=1;fit(SV[state.level]);[].forEach.call(document.querySelectorAll(".chart svg"),fit);};
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refit);
+  window.addEventListener("scroll",hideTip,{passive:true});
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();
+</script>
+<script>
+/* Tell the parent page how tall this page is, so the iframe can grow to fit without its own scrollbar. */
+(function(){
+  if(!document.documentElement.classList.contains("is-embed")||window.parent===window)return;
+  var last=0;
+  function post(force){
+    var h=Math.ceil(document.body.getBoundingClientRect().height);
+    if(h&&(force===true||h!==last)){last=h;window.parent.postMessage({type:"mi250x-embed",height:h},"*");}
+  }
+  var again=function(){post(true);};
+  window.addEventListener("load",again);
+  if(window.ResizeObserver)new ResizeObserver(post).observe(document.body);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(again);
+  /* re-send a few times in case the parent's listener was not ready for the first message */
+  setTimeout(again,400);setTimeout(again,1500);setTimeout(again,4000);
+})();
+</script>
+</body>
+</html>

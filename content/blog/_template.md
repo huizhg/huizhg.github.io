@@ -4,6 +4,7 @@
 title: Post title
 description: One or two sentences for the card, RSS and search results.
 date: 2026-01-31
+# updated: 2026-02-14  # optional: the day you last edited the post, shown next to the date
 tags: []
 draft: true # true = only visible in `npm run dev`. Change to false to publish.
 # references:  # optional, shown as a numbered list at the end of the post

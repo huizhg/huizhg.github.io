@@ -16,6 +16,7 @@ content/
 public/
   profile.jpg          your photo
   cv.pdf               your CV
+  interactive/         standalone HTML pages that posts embed (served at /interactive/)
 ```
 
 You don't need to touch `src/` (the site's code) to add content.
@@ -29,6 +30,7 @@ You don't need to touch `src/` (the site's code) to add content.
    title: Why a tabby cat can look like guacamole
    description: One or two sentences for the card, RSS and search results.
    date: 2026-09-25
+   updated: 2026-10-02    # optional, the day you last edited the post
    tags: [adversarial-examples]
    draft: false
    references:            # optional, numbered list at the end of the post
@@ -39,9 +41,22 @@ You don't need to touch `src/` (the site's code) to add content.
    - Math: `$inline$` and `$$ display $$` (KaTeX).
    - Code: fenced blocks with a language, e.g. ` ```python `.
    - Images: save them in `content/blog/` next to the post and write `![alt text](./figure.png "Fig. 1. Caption.")`. The quoted text becomes the caption; leave it out for no caption. Images are resized and compressed automatically.
+   - Tables: a Markdown table that is too wide for a phone scrolls sideways inside its own box.
+   - References: a URL in a reference becomes a link. Cite one in the text by its number in the list, `[1]` or `[3, 4]`, and each number becomes a link to that reference.
 4. `draft: true` shows the post only in `npm run dev`. Set `draft: false` and push to `main` to publish. It then appears on the home page (latest 3), the Blog page and in the RSS feed.
+5. When you edit a published post, add or change `updated:`. The post then shows "Updated Oct 2, 2026" after its date. Cards and the order of posts keep using `date`.
 
 Reading time is computed from the word count (220 words per minute).
+
+## Interactive diagrams in a post
+
+The MI250X post (`content/blog/mi250x-anatomy.md`) embeds two standalone pages, `public/interactive/mi250x-glance.html` and `public/interactive/mi250x-anatomy.html`. Everything in `public/` is copied to the site as it is, so they are served at `/interactive/…`.
+
+- **Embedding:** an `<iframe>` in the post with `?embed` in its `src` hides the page's own header and footer. `mi250x-anatomy.html` also takes `?embed=explore` and `?embed=hierarchy` to show one of its two parts.
+- **Height and theme:** the `<script>` near the first embed in the post grows each iframe to fit its page and passes on the site's light or dark theme, also when the toggle is clicked. The `<style>` above it makes the embeds wider than the text (up to 1120px), so the diagrams fit without sideways scrolling. To embed a page in another post, copy that `<style>`, `<script>` and one `<figure class="mi250x-embed">` block.
+- **Opened on their own**, the pages follow the reader's system setting. `?theme=light` or `?theme=dark` forces one.
+- **Outside requests:** the pages load fonts from Google Fonts and rough.js from cdn.jsdelivr.net. Allow both if the site ever sets a Content Security Policy.
+- **Figure sources:** `content/blog/mi250x-anatomy-excalidraw/` holds the editable Excalidraw file of each figure in that post (not deployed). Open one at excalidraw.com with Open, edit, export a PNG and replace `content/blog/mi250x-anatomy-figure-N.png`.
 
 ## Add a publication
 
@@ -134,7 +149,9 @@ The header cat does something different in each section:
 src/
   content.config.ts         tells Astro where content/ is
   lib/bibtex.ts             reads publications.bib
-  lib/rehype-figure.mjs     turns images with a quoted caption into figures
+  lib/rehype-figure.mjs     turns images with a quoted caption into figures, makes wide tables scroll
+  lib/rehype-cite.mjs       links citations like [3, 4] to the post's reference list
+  lib/fresh-dev-images.mjs  in `npm run dev`, makes the browser reload an image you replaced
   styles/tokens.css         colors (light + dark) and fonts
   styles/global.css         base styles
   styles/prose.css          article body, code blocks, math, figures

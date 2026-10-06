@@ -12,11 +12,16 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { title, description, date, draft, references } = post.data;
+const { title, description, date, updated, draft, references } = post.data;
+// The edit date shows only when it is later than the post date.
+const edited = updated && updated > date ? updated : undefined;
 const year = new Date().getFullYear();
+
+// Splits a reference into text and URLs, so the URLs become links. A full stop or comma after a URL stays text.
+const linkParts = (ref: string) => ref.split(/(https?:\/\/\S*[^\s.,;:)])/);
 ---
 
-<BaseLayout title={title} description={description} current="blog" headerMode="reading" ogType="article" publishedTime={date}>
+<BaseLayout title={title} description={description} current="blog" headerMode="reading" ogType="article" publishedTime={date} modifiedTime={edited}>
   <Fragment slot="head">
     <link rel="preload" href={katexMainUrl} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={katexMathUrl} as="font" type="font/woff2" crossorigin />
@@ -26,7 +31,7 @@ const year = new Date().getFullYear();
       <header class="post-head">
         <h1>{title}</h1>
         <p class="meta">
-          <time datetime={date.toISOString().slice(0, 10)}>{formatDate(date)}</time> · {readingTime(post.body)} min · {site.name}{draft && ' · Draft'}
+          <time datetime={date.toISOString().slice(0, 10)}>{formatDate(date)}</time>{edited && <> · Updated <time datetime={edited.toISOString().slice(0, 10)}>{formatDate(edited)}</time></>} · {readingTime(post.body)} min · {site.name}{draft && ' · Draft'}
           {site.goatcounter && <span class="views" data-views={`https://${site.goatcounter}.goatcounter.com`}>&nbsp;</span>}
         </p>
       </header>
@@ -40,8 +45,8 @@ const year = new Date().getFullYear();
           <section class="references" aria-labelledby="references-title">
             <h2 id="references-title">References</h2>
             <ol>
-              {references.map((ref) => (
-                <li>{ref}</li>
+              {references.map((ref, n) => (
+                <li id={`ref-${n + 1}`}>{linkParts(ref).map((part, i) => (i % 2 ? <a href={part}>{part}</a> : part))}</li>
               ))}
             </ol>
           </section>
@@ -132,6 +137,14 @@ const year = new Date().getFullYear();
     font-size: 16px;
     line-height: 1.5;
     color: var(--ink-soft);
+    overflow-wrap: anywhere;
+  }
+  /* A citation in the text jumps here: clear the sticky reading header and mark the entry. */
+  .references li {
+    scroll-margin-top: 120px;
+  }
+  .references li:target {
+    background: var(--card);
   }
   .post-foot {
     margin-top: 40px;
