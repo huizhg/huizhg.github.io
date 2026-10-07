@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* ?embed hides the page title so the page can sit in an iframe in a blog post.
+   ?theme=light or ?theme=dark forces a colour scheme; without it the page follows the reader's system setting. */
+(function(){
+  var q=new URLSearchParams(location.search), d=document.documentElement;
+  if(q.has("embed")){d.classList.add("is-embed");d.setAttribute("data-embed",q.get("embed")||"1");}
+  var t=q.get("theme"); if(t==="light"||t==="dark")d.setAttribute("data-theme",t);
+})();
+</script>
+<title>Grouped Tile Ordering</title>
+<meta name="description" content="Step through Triton's grouped launch order: which tile of C each program id gets for a given GROUP_M, and how many strips of A and B the programs running together need.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: intro on top, then code (left) beside the C tile grid (right); stacks on phones. */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#1b2230; --muted:#5d6878; --line:#d9dee6;
+  --a:#0d7f74; --a-soft:#d2eeea; --b:#b46a0c; --b-soft:#f6e4c8;
+  --cur:#c2185b; --wave:#dbe3f2; --band:#eceff4; --val:#3949ab;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141b; --panel:#171c25; --ink:#e6eaf0; --muted:#9aa5b5; --line:#2a3240;
+  --a:#43c7b7; --a-soft:#163a36; --b:#f0a645; --b-soft:#3b2b13;
+  --cur:#ff5c93; --wave:#26324a; --band:#1b212c; --val:#9fa8ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141b; --panel:#171c25; --ink:#e6eaf0; --muted:#9aa5b5; --line:#2a3240;
+  --a:#43c7b7; --a-soft:#163a36; --b:#f0a645; --b-soft:#3b2b13;
+  --cur:#ff5c93; --wave:#26324a; --band:#1b212c; --val:#9fa8ff; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:24px 40px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:20px}
+h1{font-size:1.6rem;font-weight:600;margin:0;text-wrap:balance}
+h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:600}
+p{margin:0;max-width:68ch}
+.intro{display:grid;gap:8px}
+code,.mono{font-family:var(--mono);font-size:.9em}
+
+.controls{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctl label,.ctl .lbl{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{font:600 .9rem var(--mono);background:transparent;color:var(--ink);border:0;padding:5px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.btn{font:600 .9rem var(--mono);background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px 10px;cursor:pointer}
+.btn:hover,.seg button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cur);outline-offset:2px}
+input[type=range]{width:160px;accent-color:var(--cur)}
+.pidout{font:600 1rem var(--mono);min-width:3ch;color:var(--cur)}
+
+.main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+
+.code{display:grid;gap:2px;overflow-x:auto}
+.ln{display:grid;gap:1px;padding:7px 10px;border-radius:6px}
+.ln:nth-child(odd){background:var(--band)}
+.ln .src{font-family:var(--mono);font-size:.86rem;white-space:pre}
+.ln .src .v{color:var(--val);font-weight:600}
+.ln .src .m{color:var(--a);font-weight:600}
+.ln .src .n{color:var(--b);font-weight:600}
+.ln .say{font-size:.84rem;color:var(--muted)}
+.ln.helper .src{font-style:italic}
+
+.gridwrap{overflow-x:auto}
+.grid{display:grid;gap:3px;width:max-content;margin:0 auto}
+.cell,.hdr,.corner{width:42px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:5px;font-family:var(--mono);font-size:.82rem;font-variant-numeric:tabular-nums}
+.cell{background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.cell.bandodd{background:var(--band)}
+.cell.bandtop{border-top:2px solid var(--muted)}
+.cell.inwave{background:var(--wave);color:var(--ink);font-weight:600}
+.cell.cur{outline:2.5px solid var(--cur);outline-offset:-1px;color:var(--cur);font-weight:600}
+.hdr{font-size:.74rem;color:var(--muted);border:1px dashed var(--line)}
+.hdr.a.on{background:var(--a-soft);color:var(--a);border:1px solid var(--a);font-weight:600}
+.hdr.b.on{background:var(--b-soft);color:var(--b);border:1px solid var(--b);font-weight:600}
+.corner{font-size:.68rem;color:var(--muted)}
+@media (max-width:480px){.cell,.hdr,.corner{width:32px;height:30px;font-size:.74rem}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--muted);margin-top:12px;justify-content:center}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;border:1px solid var(--line)}
+
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.stat .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat .x{font:600 1.15rem var(--mono);font-variant-numeric:tabular-nums}
+.stat.a .x{color:var(--a)} .stat.b .x{color:var(--b)}
+.note{margin-top:12px;font-size:.88rem}
+.note strong{color:var(--ink)}
+
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.key{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.key b{display:block;margin-bottom:4px}
+.key p{font-size:.9rem;color:var(--muted)}
+/* embed mode: the post around the iframe supplies the title */
+.is-embed body{padding-block:12px 16px}
+.is-embed h1{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="intro">
+    <h1>Grouped tile ordering, step by step</h1>
+    <p>Grouping changes only <b>which tile of C each pid gets</b>. The math inside each program stays the same. Pick a <code>GROUP_M</code>, step through pids, and watch where each one lands.</p>
+    <p class="mono" style="color:var(--muted)">Example: C has 7 tile rows × 6 tile columns = 42 programs. Assume the GPU runs a fixed number of programs at once, in pid order.</p>
+  </header>
+
+  <section class="keys" aria-label="Three ideas">
+    <div class="key"><b>1. Cut C into bands</b><p>A band is <code>GROUP_M</code> tile rows tall. With <code>GROUP_M = 3</code>, rows 0–2 are band 0, rows 3–5 band 1, row 6 band 2.</p></div>
+    <div class="key"><b>2. Walk each band down, then right</b><p>Inside a band, pids fill a column top to bottom, then move one column right. The band finishes before the next one starts.</p></div>
+    <div class="key"><b>3. Two special cases</b><p><code>GROUP_M = 1</code> makes bands one row tall: a plain row walk. <code>GROUP_M = 7</code>, the full height of C, is a pure column walk, the order a 2-D grid with <code>pid_m = tl.program_id(0)</code> produces.</p></div>
+  </section>
+
+  <section class="controls" aria-label="Controls">
+    <div class="ctl"><span class="lbl" id="g-lbl">GROUP_M</span><div class="seg" role="group" aria-labelledby="g-lbl" id="gseg"></div></div>
+    <div class="ctl"><span class="lbl" id="w-lbl">Programs at once</span><div class="seg" role="group" aria-labelledby="w-lbl" id="wseg"></div></div>
+    <div class="ctl">
+      <label for="pid">pid</label>
+      <button class="btn" id="prev" aria-label="Previous pid">◀</button>
+      <input type="range" id="pid" min="0" max="41" value="0">
+      <button class="btn" id="next" aria-label="Next pid">▶</button>
+      <span class="pidout" id="pidout">0</span>
+      <button class="btn" id="play">Play</button>
+    </div>
+  </section>
+
+  <div class="main">
+    <section class="panel">
+      <h2>The code, with this pid's numbers filled in</h2>
+      <div class="code" id="code"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Output C: each cell shows the pid that computes it</h2>
+      <div class="gridwrap"><div class="grid" id="grid"></div></div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--wave)"></span>running at the same time</span>
+        <span><span class="sw" style="background:var(--panel);outline:2px solid var(--cur);outline-offset:-2px"></span>current pid</span>
+        <span><span class="sw" style="background:var(--a-soft);border-color:var(--a)"></span>A strip needed</span>
+        <span><span class="sw" style="background:var(--b-soft);border-color:var(--b)"></span>B strip needed</span>
+      </div>
+      <div class="stats">
+        <div class="stat a"><div class="k">A strips</div><div class="x" id="sa">0</div></div>
+        <div class="stat b"><div class="k">B strips</div><div class="x" id="sb">0</div></div>
+        <div class="stat"><div class="k">Strips to load</div><div class="x" id="st">0</div></div>
+      </div>
+      <p class="note" id="note"></p>
+    </section>
+  </div>
+</div>
+
+<script>
+const NM = 7, NN = 6, TOTAL = NM * NN;
+const S = { G: 3, W: 9, pid: 0 };
+let timer = null;
+
+function map(pid, G){
+  const nig = G * NN;
+  const first = Math.floor(pid / nig) * G;
+  const gs = Math.min(NM - first, G);
+  const local = pid % nig;
+  return { nig, first, gs, local, m: first + local % gs, n: Math.floor(local / gs) };
+}
+
+function waveFor(pid, G, W){
+  const start = Math.floor(pid / W) * W, end = Math.min(start + W, TOTAL) - 1;
+  const tiles = new Set(), A = new Set(), B = new Set();
+  for (let p = start; p <= end; p++){ const t = map(p, G); tiles.add(t.m + "," + t.n); A.add(t.m); B.add(t.n); }
+  return { start, end, tiles, A, B };
+}
+
+function seg(el, values, key){
+  el.innerHTML = "";
+  values.forEach(v => {
+    const b = document.createElement("button");
+    b.textContent = v; b.setAttribute("aria-pressed", S[key] === v);
+    b.onclick = () => { S[key] = v; render(); };
+    el.appendChild(b);
+  });
+}
+
+const v = x => `<span class="v">${x}</span>`;
+function renderCode(){
+  const p = S.pid, G = S.G, t = map(p, G);
+  const lines = [
+    [`pid          = tl.program_id(0)                 = ${v(p)}`, "Which program am I? The hardware starts them in order 0, 1, 2, …"],
+    [`num_pid_m    = cdiv(M, BLOCK_M)                 = ${v(NM)}`, "C has this many tile rows."],
+    [`num_pid_n    = cdiv(N, BLOCK_N)                 = ${v(NN)}`, "C has this many tile columns."],
+    [`num_in_group = GROUP_M * num_pid_n = ${G} * ${NN}     = ${v(t.nig)}`, "Programs in one band: band height × width of C."],
+    [`first_m      = (pid // num_in_group) * GROUP_M`, ""],
+    [`             = (${p} // ${t.nig}) * ${G}                   = ${v(t.first)}`, `I'm in band ${Math.floor(p / t.nig)}. Its top row is row ${t.first}.`],
+    [`group_size_m = min(num_pid_m - first_m, GROUP_M)`, ""],
+    [`             = min(${NM} - ${t.first}, ${G})                   = ${v(t.gs)}`, t.gs < G ? `Last band is short: only ${t.gs} row${t.gs > 1 ? "s" : ""} left in C.` : "Band height. Equals GROUP_M except in the last band."],
+    [`local        = pid % num_in_group = ${p} % ${t.nig}     = ${v(t.local)}`, "Helper (the kernel writes this inline twice): my position inside the band, from 0.", true],
+    [`pid_m        = first_m + local % group_size_m`, ""],
+    [`             = ${t.first} + ${t.local} % ${t.gs}                     = <span class="m">${t.m}</span>`, `Count down the band, wrapping every ${t.gs}: row ${t.m}.`],
+    [`pid_n        = local // group_size_m = ${t.local} // ${t.gs}  = <span class="n">${t.n}</span>`, `Every ${t.gs} programs, step one column right: column ${t.n}.`],
+  ];
+  // merge continuation lines into the line above for display
+  const out = [];
+  lines.forEach(([src, say, helper]) => {
+    if (src.trim().startsWith("=") && out.length){ const last = out[out.length - 1]; last.src += "\n" + src; last.say = say; }
+    else out.push({ src, say, helper });
+  });
+  document.getElementById("code").innerHTML = out.map(l =>
+    `<div class="ln${l.helper ? " helper" : ""}"><div class="src">${l.src}</div>${l.say ? `<div class="say">${l.say}</div>` : ""}</div>`
+  ).join("");
+}
+
+function renderGrid(){
+  const G = S.G, cur = map(S.pid, G), w = waveFor(S.pid, G, S.W);
+  const at = {};
+  for (let p = 0; p < TOTAL; p++){ const t = map(p, G); at[t.m + "," + t.n] = p; }
+  let h = `<div class="corner">C</div>`;
+  for (let n = 0; n < NN; n++) h += `<div class="hdr b${w.B.has(n) ? " on" : ""}">B${n}</div>`;
+  for (let m = 0; m < NM; m++){
+    h += `<div class="hdr a${w.A.has(m) ? " on" : ""}">A${m}</div>`;
+    const band = Math.floor(m / G), top = m % G === 0 && m > 0;
+    for (let n = 0; n < NN; n++){
+      const k = m + "," + n, cls = ["cell"];
+      if (band % 2) cls.push("bandodd");
+      if (top) cls.push("bandtop");
+      if (w.tiles.has(k)) cls.push("inwave");
+      if (cur.m === m && cur.n === n) cls.push("cur");
+      h += `<div class="${cls.join(" ")}" title="tile (${m}, ${n}) ← pid ${at[k]}">${at[k]}</div>`;
+    }
+  }
+  const g = document.getElementById("grid");
+  g.style.gridTemplateColumns = `repeat(${NN + 1}, auto)`;
+  g.innerHTML = h;
+
+  const a = w.A.size, b = w.B.size, n = w.end - w.start + 1;
+  document.getElementById("sa").textContent = a;
+  document.getElementById("sb").textContent = b;
+  document.getElementById("st").textContent = a + b;
+  const base = waveFor(S.pid, 1, S.W), baseT = base.A.size + base.B.size;
+  let cmp;
+  if (G === 1) cmp = `This is a plain row walk. Try <code>GROUP_M = 7</code> for a column walk, or <code>3</code> for grouping.`;
+  else if (G === NM) cmp = `This is a pure column walk. The same pids in a row walk need <strong>${baseT}</strong>.`;
+  else cmp = `The same pids in a row walk (<code>GROUP_M = 1</code>) need <strong>${baseT}</strong>.`;
+  document.getElementById("note").innerHTML =
+    `Pids ${w.start}–${w.end} run together (${n} programs). Without sharing they would load ${2 * n} strips; together they need <strong>${a + b}</strong>. ${cmp}`;
+}
+
+function render(){
+  seg(document.getElementById("gseg"), [1, 2, 3, 4, 7], "G");
+  seg(document.getElementById("wseg"), [6, 9, 12], "W");
+  document.getElementById("pid").value = S.pid;
+  document.getElementById("pidout").textContent = S.pid;
+  renderCode(); renderGrid();
+}
+
+function setPid(p){ S.pid = (p + TOTAL) % TOTAL; render(); }
+document.getElementById("pid").addEventListener("input", e => setPid(+e.target.value));
+document.getElementById("prev").onclick = () => setPid(S.pid - 1);
+document.getElementById("next").onclick = () => setPid(S.pid + 1);
+document.getElementById("play").onclick = e => {
+  if (timer){ clearInterval(timer); timer = null; e.target.textContent = "Play"; return; }
+  e.target.textContent = "Pause";
+  timer = setInterval(() => setPid(S.pid + 1), 700);
+};
+render();
+</script>
+<script>
+/* Tell the parent page how tall this page is, so the iframe can grow to fit without its own scrollbar. */
+(function(){
+  if(!document.documentElement.classList.contains("is-embed")||window.parent===window)return;
+  var last=0;
+  function post(force){
+    var h=Math.ceil(document.body.getBoundingClientRect().height);
+    if(h&&(force===true||h!==last)){last=h;window.parent.postMessage({type:"mi250x-embed",height:h},"*");}
+  }
+  var again=function(){post(true);};
+  window.addEventListener("load",again);
+  if(window.ResizeObserver)new ResizeObserver(post).observe(document.body);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(again);
+  setTimeout(again,400);setTimeout(again,1500);setTimeout(again,4000);
+})();
+</script>
+</body>
+</html>

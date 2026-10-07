@@ -1,13 +1,14 @@
 // Where the site reads your content from. You don't need to edit this file:
-// add posts to content/blog/ and papers to content/publications.bib.
+// add a folder per post to content/blog/ and papers to content/publications.bib.
 import { defineCollection } from 'astro:content';
 import { glob, file } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { publicationsFromBibtex } from './lib/publications-bib';
 
 const blog = defineCollection({
-  // Files starting with "_" (like _template.md) are ignored.
-  loader: glob({ pattern: '**/[^_]*.md', base: './content/blog' }),
+  // One folder per post: content/blog/<slug>/index.md, with the post's images next to it.
+  // Folders starting with "_" (like _template) are ignored.
+  loader: glob({ pattern: '[^_]*/index.md', base: './content/blog' }),
   schema: z.object({
     title: z.string(),
     description: z.string(),

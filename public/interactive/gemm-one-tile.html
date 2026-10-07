@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* ?embed hides the page title so the page can sit in an iframe in a blog post.
+   ?theme=light or ?theme=dark forces a colour scheme; without it the page follows the reader's system setting. */
+(function(){
+  var q=new URLSearchParams(location.search), d=document.documentElement;
+  if(q.has("embed")){d.classList.add("is-embed");d.setAttribute("data-embed",q.get("embed")||"1");}
+  var t=q.get("theme"); if(t==="light"||t==="dark")d.setAttribute("data-theme",t);
+})();
+</script>
+<title>One Program, One Tile</title>
+<meta name="description" content="Step through a tiled matrix multiply in Triton: which rows of A and columns of B one program loads at each step along K, and which tile of C it stores.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column. Controls on top, A/B/C arranged like the matmul they are (B above C, A left of C), live code readout below. */
+:root{
+  --bg:#f7f8fa; --panel:#ffffff; --fg:#1b1d24; --muted:#5d6270; --line:#dde0e6; --empty:#eef0f3;
+  --a-strip:#d9d5f7; --a-chunk:#6a5fd6; --b-strip:#c6ece0; --b-chunk:#1a8f6c; --c-tile:#f8d3c4; --c-done:#d2552b;
+  --hl:#fff3cf;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --cell:clamp(12px,3.4vw,22px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14161c; --panel:#1c1f27; --fg:#e7e9ef; --muted:#9aa0ad; --line:#2f333e; --empty:#252933;
+  --a-strip:#3a3480; --a-chunk:#8f86ee; --b-strip:#12493b; --b-chunk:#3cc298; --c-tile:#6a2a16; --c-done:#ee7a4f;
+  --hl:#3d3418; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14161c; --panel:#1c1f27; --fg:#e7e9ef; --muted:#9aa0ad; --line:#2f333e; --empty:#252933;
+  --a-strip:#3a3480; --a-chunk:#8f86ee; --b-strip:#12493b; --b-chunk:#3cc298; --c-tile:#6a2a16; --c-done:#ee7a4f;
+  --hl:#3d3418; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font-size:22px;font-weight:600;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;max-width:62ch}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.controls .lbl{font-size:13px;color:var(--muted);margin-right:4px}
+button{font:inherit;font-size:14px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--a-chunk);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--c-tile);border-color:var(--c-done)}
+.spacer{flex:1}
+.board{display:grid;grid-template-columns:auto auto;gap:14px 18px;justify-content:start;overflow-x:auto;padding-bottom:4px}
+.mlabel{font-size:13px;color:var(--muted);margin:0 0 6px;font-family:var(--mono);white-space:nowrap}
+.grid{display:grid;gap:2px}
+.cell{width:var(--cell);height:var(--cell);border-radius:2px;background:var(--empty);transition:background-color .15s}
+.as{background:var(--a-strip)}.ac{background:var(--a-chunk)}
+.bs{background:var(--b-strip)}.bc{background:var(--b-chunk)}
+.ct{background:var(--c-tile)}.cd{background:var(--c-done)}
+#C .cell{cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:2px;display:inline-block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.state{font-family:var(--mono);font-size:13px;line-height:1.85;overflow-x:auto;white-space:pre}
+.code{font-family:var(--mono);font-size:13px;line-height:1.7;margin:0;overflow-x:auto}
+.code div{white-space:pre;padding:0 6px;border-radius:3px}
+.code .on{background:var(--hl)}
+.foot{font-size:13px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){.cell{transition:none}}
+/* embed mode: the post around the iframe supplies the title */
+.is-embed body{padding-block:12px 16px}
+.is-embed h1{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>One program, one tile of C</h1>
+    <p class="sub">C = A @ B with M = N = 8, K = 12, and BLOCK_M = BLOCK_N = BLOCK_K = 4. Pick a program, then step along K and watch which pieces of A and B it loads.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Program and loop controls">
+    <span class="lbl">Program (pid_m, pid_n):</span>
+    <button data-p="0,0">(0, 0)</button>
+    <button data-p="0,1">(0, 1)</button>
+    <button data-p="1,0">(1, 0)</button>
+    <button data-p="1,1">(1, 1)</button>
+    <span class="spacer"></span>
+    <button id="prev">← Back</button>
+    <button id="next">Next k step →</button>
+  </div>
+
+  <div class="board" aria-label="Matrices A, B and C">
+    <div></div>
+    <div><p class="mlabel">B · K × N = 12 × 8</p><div id="B" class="grid" style="grid-template-columns:repeat(8,var(--cell))"></div></div>
+    <div><p class="mlabel">A · M × K = 8 × 12</p><div id="A" class="grid" style="grid-template-columns:repeat(12,var(--cell))"></div></div>
+    <div><p class="mlabel">C · M × N = 8 × 8</p><div id="C" class="grid" style="grid-template-columns:repeat(8,var(--cell))"></div></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw" style="background:var(--a-strip)"></i>rows of A this program needs</span>
+    <span><i class="sw" style="background:var(--a-chunk)"></i>A chunk loaded this step</span>
+    <span><i class="sw" style="background:var(--b-strip)"></i>columns of B it needs</span>
+    <span><i class="sw" style="background:var(--b-chunk)"></i>B chunk loaded this step</span>
+    <span><i class="sw" style="background:var(--c-tile)"></i>its tile of C, in progress</span>
+    <span><i class="sw" style="background:var(--c-done)"></i>tile stored</span>
+  </div>
+
+  <div class="panel"><div id="state" class="state" aria-live="polite"></div></div>
+
+  <div class="panel">
+    <div class="code" id="code"></div>
+  </div>
+
+  <p class="foot">Real kernels use the same structure at larger sizes, for example 128 × 128 tiles with BLOCK_K = 32. Click any square of C to pick the program that owns it.</p>
+</div>
+
+<script>
+const M=8,N=8,K=12,BM=4,BN=4,BK=4,STEPS=K/BK;
+let pm=1,pn=0,s=0;
+const CODE=[
+ ["pid_m = tl.program_id(0)","pid"],
+ ["pid_n = tl.program_id(1)","pid"],
+ ["offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)","pid"],
+ ["offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)","pid"],
+ ["acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)","pid"],
+ ["for k0 in range(0, K, BLOCK_K):","loop"],
+ ["    a = tl.load(a_ptrs, mask=a_mask, other=0.0)   # A chunk","loop"],
+ ["    b = tl.load(b_ptrs, mask=b_mask, other=0.0)   # B chunk","loop"],
+ ["    acc += tl.dot(a, b)","loop"],
+ ["    a_ptrs += BLOCK_K * s_ak; b_ptrs += BLOCK_K * s_bk","loop"],
+ ["tl.store(c_ptrs, acc.to(tl.float16), mask=c_mask)","store"]
+];
+function mk(id,r,c){const e=document.getElementById(id);const f=document.createDocumentFragment();
+ for(let i=0;i<r;i++)for(let j=0;j<c;j++){const d=document.createElement('div');d.className='cell';d.dataset.i=i;d.dataset.j=j;f.appendChild(d)}
+ e.appendChild(f);return e}
+const A=mk('A',M,K),B=mk('B',K,N),C=mk('C',M,N);
+const codeEl=document.getElementById('code');
+CODE.forEach(([t])=>{const d=document.createElement('div');d.textContent=t;codeEl.appendChild(d)});
+const rng=(a,n)=>Array.from({length:n},(_,t)=>a+t).join(', ');
+function draw(){
+ const r0=pm*BM,c0=pn*BN,k0=s<STEPS?s*BK:null;
+ for(const d of A.children){const i=+d.dataset.i,j=+d.dataset.j;let c='cell';
+  if(i>=r0&&i<r0+BM){c+=' as';if(k0!==null&&j>=k0&&j<k0+BK)c+=' ac'}d.className=c}
+ for(const d of B.children){const i=+d.dataset.i,j=+d.dataset.j;let c='cell';
+  if(j>=c0&&j<c0+BN){c+=' bs';if(k0!==null&&i>=k0&&i<k0+BK)c+=' bc'}d.className=c}
+ for(const d of C.children){const i=+d.dataset.i,j=+d.dataset.j;let c='cell';
+  if(i>=r0&&i<r0+BM&&j>=c0&&j<c0+BN)c+=s>=STEPS?' cd':' ct';d.className=c}
+ let h=`pid_m = ${pm}, pid_n = ${pn}\n`+
+   `offs_m = ${pm}*4 + [0, 1, 2, 3] = [${rng(r0,BM)}]   rows of A and C\n`+
+   `offs_n = ${pn}*4 + [0, 1, 2, 3] = [${rng(c0,BN)}]   columns of B and C\n`;
+ if(s<STEPS){h+=`loop step ${s+1} of ${STEPS}: k0 = ${k0}, k positions [${rng(k0,BK)}]\n`+
+   `acc += A[rows ${r0}-${r0+BM-1}, k ${k0}-${k0+BK-1}] @ B[k ${k0}-${k0+BK-1}, cols ${c0}-${c0+BN-1}]`}
+ else h+=`loop finished: acc holds the full sum over all ${K} values of k\n`+
+   `tl.store writes acc into C[rows ${r0}-${r0+BM-1}, cols ${c0}-${c0+BN-1}]`;
+ document.getElementById('state').textContent=h;
+ const phase=s<STEPS?'loop':'store';
+ [...codeEl.children].forEach((d,i)=>d.classList.toggle('on',CODE[i][1]===phase));
+ document.querySelectorAll('[data-p]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===`${pm},${pn}`?'true':'false'));
+}
+document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{[pm,pn]=b.dataset.p.split(',').map(Number);s=0;draw()}));
+document.getElementById('next').addEventListener('click',()=>{if(s<STEPS)s++;draw()});
+document.getElementById('prev').addEventListener('click',()=>{if(s>0)s--;draw()});
+C.addEventListener('click',e=>{const d=e.target;if(d.dataset.i===undefined)return;pm=Math.floor(+d.dataset.i/BM);pn=Math.floor(+d.dataset.j/BN);s=0;draw()});
+draw();
+</script>
+<script>
+/* Tell the parent page how tall this page is, so the iframe can grow to fit without its own scrollbar. */
+(function(){
+  if(!document.documentElement.classList.contains("is-embed")||window.parent===window)return;
+  var last=0;
+  function post(force){
+    var h=Math.ceil(document.body.getBoundingClientRect().height);
+    if(h&&(force===true||h!==last)){last=h;window.parent.postMessage({type:"mi250x-embed",height:h},"*");}
+  }
+  var again=function(){post(true);};
+  window.addEventListener("load",again);
+  if(window.ResizeObserver)new ResizeObserver(post).observe(document.body);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(again);
+  setTimeout(again,400);setTimeout(again,1500);setTimeout(again,4000);
+})();
+</script>
+</body>
+</html>

@@ -52,7 +52,7 @@ Quick note before we start: Numbers are per GCD, one of the two dies in the pack
 
 The MI250X is not one big GPU. Open the package (Fig. 1) and you find two graphics compute dies, or GCDs, side by side, each with memory of its own.
 
-![An MI250X package with two GCDs, each surrounded by four HBM2e stacks, four Infinity Fabric links between the GCDs, and links to the host CPU, other packages and the network card](./mi250x-anatomy-figure-1.png "Fig. 1. One MI250X package: two GCDs, each with four HBM2e stacks, joined by four Infinity Fabric links. Each GCD has its own links to the host CPU and to other packages.")
+![An MI250X package with two GCDs, each surrounded by four HBM2e stacks, four Infinity Fabric links between the GCDs, and links to the host CPU, other packages and the network card](./figure-1.png "Fig. 1. One MI250X package: two GCDs, each with four HBM2e stacks, joined by four Infinity Fabric links. Each GCD has its own links to the host CPU and to other packages.")
 
 Each GCD is a complete GPU: 110 compute units, an 8 MiB L2 cache and 64 GiB of HBM2e in four stacks, with 1.6 TB/s of bandwidth [3, 4, 5, 6]. ROCm, HIP and Slurm treat each GCD as a separate device. A LUMI-G node has one 64-core AMD EPYC 7A53 "Trento" CPU and four MI250X packages, so it shows eight GPUs [3].
 
@@ -68,7 +68,7 @@ So treat the MI250X as two GPUs that happen to share a package. A kernel runs on
 
 Zoom into one die (Fig. 2).
 
-![One GCD: a dispatch block with four ACEs, four compute engines with two shader engines of 14 CUs each, the L2 cache with 32 channels, the on-die Infinity Fabric, and below it HBM2e, the links to GCD 1 and the off-package links](./mi250x-anatomy-figure-2.png "Fig. 2. One GCD. The compute units sit in four compute engines of two shader engines each. All of them share one L2 cache, which reaches HBM and the links through the on-die Infinity Fabric.")
+![One GCD: a dispatch block with four ACEs, four compute engines with two shader engines of 14 CUs each, the L2 cache with 32 channels, the on-die Infinity Fabric, and below it HBM2e, the links to GCD 1 and the off-package links](./figure-2.png "Fig. 2. One GCD. The compute units sit in four compute engines of two shader engines each. All of them share one L2 cache, which reaches HBM and the links through the on-die Infinity Fabric.")
 
 The die has 112 compute units, or CUs. The MI250X enables 110 of them and the MI250 enables 104 [3, 4]. They are organized in four compute engines of two shader engines each, 14 CUs per shader engine on the die. Four asynchronous compute engines (ACEs), one per compute engine, dispatch work onto them [6]. The names are easy to mix up: a compute engine is a group of CUs, while an ACE is part of the front end that reads kernel launches from queues and sends their workgroups to CUs. The grouping matters to the hardware's scheduling more than to your code.
 
@@ -80,7 +80,7 @@ Two things are missing compared with newer GPUs. There is no cache behind the L2
 
 The compute unit is where the work happens (Fig. 3).
 
-![One compute unit: instruction cache and scalar cache on top, the scheduler, four SIMDs each with a vector ALU, a matrix core, wave slots and a 128 KiB register file, the scalar ALU and SGPRs, and at the bottom the LDS, the vector memory unit and the vector L1 cache, which connects to the L2](./mi250x-anatomy-figure-3.png "Fig. 3. One compute unit: four SIMDs, each with a 16-lane vector ALU, a matrix core and its own registers, plus a scalar unit, the LDS and the vector memory path that the four SIMDs share.")
+![One compute unit: instruction cache and scalar cache on top, the scheduler, four SIMDs each with a vector ALU, a matrix core, wave slots and a 128 KiB register file, the scalar ALU and SGPRs, and at the bottom the LDS, the vector memory unit and the vector L1 cache, which connects to the L2](./figure-3.png "Fig. 3. One compute unit: four SIMDs, each with a 16-lane vector ALU, a matrix core and its own registers, plus a scalar unit, the LDS and the vector memory path that the four SIMDs share.")
 
 A CU has four SIMDs. Each SIMD has a 16-lane vector ALU, a matrix core that runs MFMA (matrix fused multiply-add) instructions, slots for up to eight wavefronts, and a register file of 512 registers × 64 lanes × 4 bytes = 128 KiB [4, 10, 11]. That file holds two kinds of vector registers: ordinary VGPRs, and AGPRs, which CDNA introduced as accumulators for the matrix cores [10].
 
@@ -195,7 +195,7 @@ Each card ends with a link into the full anatomy explorer, which we will use lat
 
 HIP, AMD's CUDA-like language, uses the same thread hierarchy as CUDA (Fig. 4). A kernel launch creates a grid of workgroups, CUDA's thread blocks. A workgroup holds up to 1,024 threads, and the hardware splits it into wavefronts of 64 [12]. Each thread finds its place with the familiar built-ins `threadIdx`, `blockIdx`, `blockDim` and `gridDim`. One more built-in matters on AMD: `warpSize`, which is 64 on CDNA GPUs and 32 on RDNA GPUs [12].
 
-![Software on the left, hardware on the right: a grid of workgroups maps to the GCD's CUs, a workgroup maps to one CU with its LDS, and a 64-thread wavefront maps to a 16-lane SIMD, 16 threads per cycle](./mi250x-anatomy-figure-4.png "Fig. 4. How HIP's thread hierarchy maps onto one GCD. The hardware places each workgroup on one CU, where all its wavefronts share the LDS. Each wavefront runs on one SIMD, 16 threads per clock.")
+![Software on the left, hardware on the right: a grid of workgroups maps to the GCD's CUs, a workgroup maps to one CU with its LDS, and a 64-thread wavefront maps to a 16-lane SIMD, 16 threads per cycle](./figure-4.png "Fig. 4. How HIP's thread hierarchy maps onto one GCD. The hardware places each workgroup on one CU, where all its wavefronts share the LDS. Each wavefront runs on one SIMD, 16 threads per clock.")
 
 Three rules connect the two sides:
 
@@ -231,7 +231,7 @@ Why is there a hierarchy at all? Physics, as Aleksa explains [1]. Static RAM (SR
 
 Fig. 5 puts the whole hierarchy of one GCD on a single page, in the style of Aleksa's H100 diagram.
 
-![The whole GCD on one page: two CUs drawn open with matrix cores, vector ALUs, wave slots, registers, scalar ALU, SGPRs, load/store units, LDS and vector L1; the 110 CUs in 8 shader engines; the L2 with its line size, channels, bandwidth and latency; HBM2e with global, constant and scratch memory; and the links to the host CPU, the other GCD, other packages and the network card](./mi250x-anatomy-figure-5.png "Fig. 5. One MI250X GCD on one page, from the matrix cores at the top to HBM at the bottom. Two of the 110 CUs are drawn open. The notes carry the numbers and the CDNA 2 specifics.")
+![The whole GCD on one page: two CUs drawn open with matrix cores, vector ALUs, wave slots, registers, scalar ALU, SGPRs, load/store units, LDS and vector L1; the 110 CUs in 8 shader engines; the L2 with its line size, channels, bandwidth and latency; HBM2e with global, constant and scratch memory; and the links to the host CPU, the other GCD, other packages and the network card](./figure-5.png "Fig. 5. One MI250X GCD on one page, from the matrix cores at the top to HBM at the bottom. Two of the 110 CUs are drawn open. The notes carry the numbers and the CDNA 2 specifics.")
 
 Here are the levels side by side, for one GCD [3, 4, 5, 9, 15, 20, 21]:
 
@@ -312,7 +312,7 @@ $$
 
 Each bank serves one word per clock, so the LDS delivers 32 × 4 = 128 bytes per clock to its CU [15]. If several threads in the same clock need *different* words from the *same* bank, the bank serves them one after another. That is a bank conflict (Fig. 6).
 
-![Two rows of 32 lanes above 32 LDS banks. In A, lane i reads a[i] and each lane hits its own bank in one pass. In B, lane i reads a[32 times i] and every lane hits bank 0, which takes 32 passes. A note says padding each row to 33 floats fixes it](./mi250x-anatomy-figure-6.png "Fig. 6. LDS banks. A: threads read consecutive floats and hit 32 different banks in one pass. B: threads read down a column of a 32-wide tile and all hit bank 0, which takes 32 passes. Padding each row to 33 floats fixes it.")
+![Two rows of 32 lanes above 32 LDS banks. In A, lane i reads a[i] and each lane hits its own bank in one pass. In B, lane i reads a[32 times i] and every lane hits bank 0, which takes 32 passes. A note says padding each row to 33 floats fixes it](./figure-6.png "Fig. 6. LDS banks. A: threads read consecutive floats and hit 32 different banks in one pass. B: threads read down a column of a 32-wide tile and all hit bank 0, which takes 32 passes. Padding each row to 33 floats fixes it.")
 
 Which threads count as the same clock? A wavefront has 64 threads, but the LDS serves 128 bytes per clock, so a wavefront's access is split into phases. A kernel optimization guide for CDNA 3, whose LDS has the same 32 banks of 4 bytes, describes the split: two phases of 32 lanes for 4-byte accesses, four phases of 16 lanes for 8-byte accesses, and eight phases for 16-byte accesses [22]. AMD's Composable Kernel documentation describes the same eight phases for 16-byte writes [23]. I have not found this table written down for CDNA 2, but the bank layout is the same. Conflicts only matter within a phase. Threads that read the *same* address do not conflict at all, because the value is broadcast [22].
 
@@ -353,7 +353,7 @@ We have the map. Now let's follow the data. On CDNA 2, wavefronts move data with
 
 Fig. 7 follows one `global_load_dword`, a 4-byte load per thread, that misses every cache.
 
-![A vertical chain: the wave's VGPRs, the vector memory unit, the vector L1, the L2, the on-die Infinity Fabric and HBM2e, with numbered steps 1 to 5 going down and 6 to 10 coming back up](./mi250x-anatomy-figure-7.png "Fig. 7. The life of a load that misses every cache. Black arrows go down toward memory; blue arrows bring the data back.")
+![A vertical chain: the wave's VGPRs, the vector memory unit, the vector L1, the L2, the on-die Infinity Fabric and HBM2e, with numbered steps 1 to 5 going down and 6 to 10 coming back up](./figure-7.png "Fig. 7. The life of a load that misses every cache. Black arrows go down toward memory; blue arrows bring the data back.")
 
 1. The wavefront issues the load. Each of its 64 lanes supplies an address.
 2. The address unit (TA) coalesces the 64 addresses into requests for 64-byte lines and looks them up in the vector L1 [15, 16].
@@ -372,7 +372,7 @@ The important part is what happens during the wait. A load only issues the reque
 
 Step 2 deserves a closer look, because it is where most bandwidth is won or lost. The TA turns a wavefront's 64 addresses into as few 64-byte line requests as it can (Fig. 8).
 
-![Two rows of 64 lanes. In A, the lanes read 256 consecutive bytes, which fall into four 64-byte lines. In B, each lane reads a float 64 bytes after the previous lane's, so every lane needs its own line: 64 lines and 4 KiB moved for 256 useful bytes](./mi250x-anatomy-figure-8.png "Fig. 8. Coalescing on CDNA 2. A: consecutive lanes read consecutive floats, and 64 lanes need four 64-byte lines. B: lanes read floats 64 bytes apart, and every lane needs a line of its own.")
+![Two rows of 64 lanes. In A, the lanes read 256 consecutive bytes, which fall into four 64-byte lines. In B, each lane reads a float 64 bytes after the previous lane's, so every lane needs its own line: 64 lines and 4 KiB moved for 256 useful bytes](./figure-8.png "Fig. 8. Coalescing on CDNA 2. A: consecutive lanes read consecutive floats, and 64 lanes need four 64-byte lines. B: lanes read floats 64 bytes apart, and every lane needs a line of its own.")
 
 In pattern A, thread $i$ reads `a[i]`. The 64 floats fill 256 contiguous bytes, which is four lines. The L1 serves 64 bytes per clock, so the wavefront needs at least four clocks of L1 time, and every byte moved is used.
 
@@ -431,7 +431,7 @@ Each SIMD's vector ALU runs one instruction for a whole wavefront over four cloc
 
 The matrix cores do the heavy lifting for matrix math. They run MFMA instructions, in which the whole wavefront cooperates on one small matrix multiply-accumulate, $D = A \cdot B + C$, with the operands spread across the registers of its 64 lanes (Fig. 9).
 
-![On the left, the shapes of one MFMA: A is 32 by 8, B is 8 by 32, C and D are 32 by 32. On the right, how they sit in registers across 64 lanes: two VGPRs per lane each for A and B, sixteen registers per lane for C and D](./mi250x-anatomy-figure-9.png "Fig. 9. One MFMA instruction, v_mfma_f32_32x32x8f16. A and B are FP16 tiles of 32 by 8 and 8 by 32; C and D are 32 by 32 in FP32. Every lane holds a slice of every operand.")
+![On the left, the shapes of one MFMA: A is 32 by 8, B is 8 by 32, C and D are 32 by 32. On the right, how they sit in registers across 64 lanes: two VGPRs per lane each for A and B, sixteen registers per lane for C and D](./figure-9.png "Fig. 9. One MFMA instruction, v_mfma_f32_32x32x8f16. A and B are FP16 tiles of 32 by 8 and 8 by 32; C and D are 32 by 32 in FP32. Every lane holds a slice of every operand.")
 
 Take `v_mfma_f32_32x32x8f16`. A (32 × 8) and B (8 × 32) are FP16, and C and D (32 × 32) are FP32. A and B take two VGPRs per lane each: 64 lanes × 4 halves = 256 values = 32 × 8. The C tile takes 16 registers per lane: 64 × 16 = 1,024 values = 32 × 32 [19]. One instruction performs
 
@@ -479,7 +479,7 @@ $$
 P \le \min\left(P_\text{peak},\ B \times I\right)
 $$
 
-![A log-log roofline for one GCD: a sloped HBM roof at 1.6 TB/s times intensity, a flat FP16 matrix roof at 191.5 TFLOPS with its ridge near 120 FLOPs per byte, a flat FP64 vector roof at 23.9 TFLOPS with its ridge near 15, and an FP32 vector add marked at 1 FLOP per 12 bytes, about 0.13 TFLOPS](./mi250x-anatomy-figure-10.png "Fig. 10. The roofline of one GCD at peak clock, with HBM as the memory. A ridge point marks the intensity a kernel needs before compute, not memory, sets its speed.")
+![A log-log roofline for one GCD: a sloped HBM roof at 1.6 TB/s times intensity, a flat FP16 matrix roof at 191.5 TFLOPS with its ridge near 120 FLOPs per byte, a flat FP64 vector roof at 23.9 TFLOPS with its ridge near 15, and an FP32 vector add marked at 1 FLOP per 12 bytes, about 0.13 TFLOPS](./figure-10.png "Fig. 10. The roofline of one GCD at peak clock, with HBM as the memory. A ridge point marks the intensity a kernel needs before compute, not memory, sets its speed.")
 
 The ridge point is where the two limits meet. For FP16 matrix math it sits at 191.5 / 1.6 ≈ 120 FLOPs per byte, the same 120 we met in the HBM section. For FP64 vector math it is about 15. A vector add, `c[i] = a[i] + b[i]` in FP32, does 1 FLOP per 12 bytes (two loads and a store), so it can never exceed about 0.13 TFLOPS, however clever the code. It is memory-bound by a wide margin.
 
@@ -489,7 +489,7 @@ Matrix multiplication is the opposite case. Its intensity grows with the size of
 
 The last question is how threads exchange data. The answer depends on how far apart they are, and the cost grows with the distance (Fig. 11).
 
-![Nested boxes: a wavefront on one SIMD inside a workgroup on one CU, inside GCD 0, next to GCD 1, inside an MI250X package, inside a LUMI-G node, with the other packages, the host CPU and other nodes outside, each labelled with how data is shared and how fast](./mi250x-anatomy-figure-11.png "Fig. 11. Sharing scopes, from one wavefront out to the network. The smaller the box that holds both sides of an exchange, the faster and cheaper the exchange.")
+![Nested boxes: a wavefront on one SIMD inside a workgroup on one CU, inside GCD 0, next to GCD 1, inside an MI250X package, inside a LUMI-G node, with the other packages, the host CPU and other nodes outside, each labelled with how data is shared and how fast](./figure-11.png "Fig. 11. Sharing scopes, from one wavefront out to the network. The smaller the box that holds both sides of an exchange, the faster and cheaper the exchange.")
 
 **Inside a wavefront.** The threads of one wavefront can swap register values without touching memory. DPP, short for data-parallel primitives, is a modifier on vector instructions that lets a lane read a neighbour's value, within rows of 16 lanes or across the wavefront [13]. `ds_swizzle_b32` and `ds_bpermute_b32` route values between lanes through the LDS hardware without using any LDS memory [13]. HIP's warp shuffles are built on these. This is the cheapest exchange there is.
 

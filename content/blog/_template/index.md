@@ -1,6 +1,7 @@
 ---
-# HOW TO USE: copy this file in the same folder and rename it, e.g. my-first-post.md
-# (no "_" at the start). The file name becomes the address: /blog/my-first-post/
+# HOW TO USE: copy this folder (_template) inside content/blog/ and rename the copy,
+# e.g. my-first-post (no "_" at the start). Keep this file's name, index.md.
+# The folder name becomes the address: /blog/my-first-post/
 title: Post title
 description: One or two sentences for the card, RSS and search results.
 date: 2026-01-31
@@ -25,6 +26,6 @@ $$
 print("code blocks are highlighted")
 ```
 
-Put images in this folder next to the post. The text in quotes becomes the caption:
+Put images in the post's folder, next to this file. The text in quotes becomes the caption:
 
-![Describe the image for screen readers](./my-first-post-figure-1.png "Fig. 1. Caption text.")
+![Describe the image for screen readers](./figure-1.png "Fig. 1. Caption text.")

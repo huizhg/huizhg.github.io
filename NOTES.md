@@ -11,19 +11,32 @@ content/
   site.ts              your name, role, bio, social links, name spellings to bold
   publications.bib     your papers, as plain BibTeX
   blog/
-    _template.md       copy this to start a post
-    my-post.md         one Markdown file per post (+ its images next to it)
+    _template/         copy this folder to start a post
+    my-post/           one folder per post
+      index.md         the post
+      figure-1.png     its images, next to it
 public/
   profile.jpg          your photo
   cv.pdf               your CV
   interactive/         standalone HTML pages that posts embed (served at /interactive/)
+  blog/<post>/         images a post links by full address (only the survey post does this)
 ```
 
 You don't need to touch `src/` (the site's code) to add content.
 
+**Which folder a post's file goes in:**
+
+| The file is | It goes in | The post refers to it as |
+|---|---|---|
+| The post and its images | `content/blog/<post>/` | `./figure-1.png` |
+| Sources of the figures (Excalidraw files, plot scripts), not deployed | a subfolder of `content/blog/<post>/` | not referred to |
+| An interactive HTML page the post embeds | `public/interactive/` | `/interactive/<page>.html` |
+
+`content/` is what Astro builds: it turns the Markdown into a page and resizes the images. `public/` is copied to the site as it is, so a file goes there only when it must stay exactly as it is, like a standalone HTML page.
+
 ## Add a blog post
 
-1. In `content/blog/`, copy `_template.md` and rename the copy, e.g. `my-first-post.md`. The file name becomes the address: `/blog/my-first-post/`. (Files starting with `_` are ignored.)
+1. In `content/blog/`, copy the `_template` folder and rename the copy, e.g. `my-first-post`. The folder name becomes the address: `/blog/my-first-post/`. The post itself is the `index.md` inside; keep that name. (Folders starting with `_` are ignored.)
 2. Fill in the top part (the "frontmatter"):
    ```yaml
    ---
@@ -40,7 +53,7 @@ You don't need to touch `src/` (the site's code) to add content.
 3. Write the post in Markdown below it.
    - Math: `$inline$` and `$$ display $$` (KaTeX).
    - Code: fenced blocks with a language, e.g. ` ```python `.
-   - Images: save them in `content/blog/` next to the post and write `![alt text](./figure.png "Fig. 1. Caption.")`. The quoted text becomes the caption; leave it out for no caption. Images are resized and compressed automatically.
+   - Images: save them in the post's folder next to `index.md` and write `![alt text](./figure-1.png "Fig. 1. Caption.")`. The quoted text becomes the caption; leave it out for no caption. Images are resized and compressed automatically.
    - Tables: a Markdown table that is too wide for a phone scrolls sideways inside its own box.
    - References: a URL in a reference becomes a link. Cite one in the text by its number in the list, `[1]` or `[3, 4]`, and each number becomes a link to that reference.
 4. `draft: true` shows the post only in `npm run dev`. Set `draft: false` and push to `main` to publish. It then appears on the home page (latest 3), the Blog page and in the RSS feed.
@@ -50,13 +63,14 @@ Reading time is computed from the word count (220 words per minute).
 
 ## Interactive diagrams in a post
 
-The MI250X post (`content/blog/mi250x-anatomy.md`) embeds two standalone pages, `public/interactive/mi250x-glance.html` and `public/interactive/mi250x-anatomy.html`. Everything in `public/` is copied to the site as it is, so they are served at `/interactive/…`.
+The MI250X post (`content/blog/mi250x-anatomy/index.md`) embeds two standalone pages, `public/interactive/mi250x-glance.html` and `public/interactive/mi250x-anatomy.html`. Everything in `public/` is copied to the site as it is, so they are served at `/interactive/…`.
 
 - **Embedding:** an `<iframe>` in the post with `?embed` in its `src` hides the page's own header and footer. `mi250x-anatomy.html` also takes `?embed=explore` and `?embed=hierarchy` to show one of its two parts.
 - **Height and theme:** the `<script>` near the first embed in the post grows each iframe to fit its page and passes on the site's light or dark theme, also when the toggle is clicked. The `<style>` above it makes the embeds wider than the text (up to 1120px), so the diagrams fit without sideways scrolling. To embed a page in another post, copy that `<style>`, `<script>` and one `<figure class="mi250x-embed">` block.
 - **Opened on their own**, the pages follow the reader's system setting. `?theme=light` or `?theme=dark` forces one.
 - **Outside requests:** the pages load fonts from Google Fonts and rough.js from cdn.jsdelivr.net. Allow both if the site ever sets a Content Security Policy.
-- **Figure sources:** `content/blog/mi250x-anatomy-excalidraw/` holds the editable Excalidraw file of each figure in that post (not deployed). Open one at excalidraw.com with Open, edit, export a PNG and replace `content/blog/mi250x-anatomy-figure-N.png`.
+- **Figure sources:** `content/blog/mi250x-anatomy/excalidraw/` holds the editable Excalidraw file of each figure in that post (not deployed). Open one at excalidraw.com with Open, edit, export a PNG and replace `content/blog/mi250x-anatomy/figure-N.png`.
+- **The Triton GEMM post** (`content/blog/triton-gemm-mi250x/index.md`) embeds `public/interactive/gemm-one-tile.html` and `public/interactive/gemm-launch-order.html` the same way. Its two figures are drawn by the scripts in `content/blog/triton-gemm-mi250x/plots/` (not deployed). They read the results in the [gpu-perf-mi250x](https://github.com/huizhg/gpu-perf-mi250x) repository, so run them from that repository's root.
 
 ## Add a publication
 
