@@ -16,6 +16,8 @@ const blog = defineCollection({
     updated: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    // false hides the table of contents. It shows when a post has at least 3 sections.
+    toc: z.boolean().default(true),
     references: z.array(z.string()).default([]),
   }),
 });

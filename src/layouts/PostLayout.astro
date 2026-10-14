@@ -3,22 +3,39 @@ import 'katex/dist/katex.min.css';
 import '../styles/prose.css';
 import katexMainUrl from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
 import katexMathUrl from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
+import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 import { site } from '../../content/site';
 import { formatDate, readingTime, type Post } from '../lib/posts';
 
 interface Props {
   post: Post;
+  headings?: MarkdownHeading[];
 }
 
-const { post } = Astro.props;
-const { title, description, date, updated, draft, references } = post.data;
+const { post, headings = [] } = Astro.props;
+const { title, description, date, updated, draft, references, toc } = post.data;
 // The edit date shows only when it is later than the post date.
 const edited = updated && updated > date ? updated : undefined;
 const year = new Date().getFullYear();
 
 // Splits a reference into text and URLs, so the URLs become links. A full stop or comma after a URL stays text.
 const linkParts = (ref: string) => ref.split(/(https?:\/\/\S*[^\s.,;:)])/);
+
+// Table of contents: the post's ## and ### headings, each ### nested under the ## before it.
+// It shows when the post has at least 3 sections, unless the frontmatter says `toc: false`.
+type TocEntry = { slug: string; text: string; children: { slug: string; text: string }[] };
+const tocEntries: TocEntry[] = [];
+for (const { depth, slug, text } of headings) {
+  if (depth === 2) tocEntries.push({ slug, text, children: [] });
+  else if (depth === 3) {
+    const parent = tocEntries.at(-1);
+    if (parent) parent.children.push({ slug, text });
+    else tocEntries.push({ slug, text, children: [] });
+  }
+}
+if (references.length > 0) tocEntries.push({ slug: 'references-title', text: 'References', children: [] });
+const showToc = toc && tocEntries.length >= 3;
 ---
 
 <BaseLayout title={title} description={description} current="blog" headerMode="reading" ogType="article" publishedTime={date} modifiedTime={edited}>
@@ -27,7 +44,7 @@ const linkParts = (ref: string) => ref.split(/(https?:\/\/\S*[^\s.,;:)])/);
     <link rel="preload" href={katexMathUrl} as="font" type="font/woff2" crossorigin />
   </Fragment>
   <main>
-    <article id="article" class="post">
+    <article id="article" class:list={['post', { 'has-toc': showToc }]}>
       <header class="post-head">
         <h1>{title}</h1>
         <p class="meta">
@@ -35,6 +52,35 @@ const linkParts = (ref: string) => ref.split(/(https?:\/\/\S*[^\s.,;:)])/);
           {site.goatcounter && <span class="views" data-views={`https://${site.goatcounter}.goatcounter.com`}>&nbsp;</span>}
         </p>
       </header>
+
+      {
+        showToc && (
+          <nav class="toc" aria-label="Contents">
+            <details>
+              <summary>
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 3.5h12M2 8h12M2 12.5h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+                Contents
+              </summary>
+              <ol class="toc-list">
+                {tocEntries.map((entry) => (
+                  <li>
+                    <a href={`#${entry.slug}`}>{entry.text}</a>
+                    {entry.children.length > 0 && (
+                      <ol>
+                        {entry.children.map((child) => (
+                          <li>
+                            <a href={`#${child.slug}`}>{child.text}</a>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          </nav>
+        )
+      }
 
       <div class="prose">
         <slot />
@@ -74,6 +120,90 @@ const linkParts = (ref: string) => ref.split(/(https?:\/\/\S*[^\s.,;:)])/);
         views.textContent = `${count} ${count === '1' ? 'view' : 'views'}`;
       })
       .catch(() => {});
+  }
+
+  // The interactive diagrams load lazily and then change height, so one passed on the way to a
+  // section or reference would push it down. For a few seconds after an in-page link is clicked,
+  // keep the target where the jump put it, until the reader scrolls on their own.
+  const article = document.getElementById('article')!;
+  let settle: { target: HTMLElement; until: number } | undefined;
+  article.addEventListener('click', (event) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');
+    const target = link && document.getElementById(decodeURIComponent(link.hash.slice(1)));
+    if (target) settle = { target, until: Date.now() + 4000 };
+  });
+  for (const type of ['wheel', 'touchstart', 'keydown']) addEventListener(type, () => (settle = undefined), { passive: true });
+  new ResizeObserver(() => {
+    if (settle && Date.now() < settle.until) settle.target.scrollIntoView({ behavior: 'instant' });
+    else settle = undefined;
+  }).observe(article);
+
+  // Table of contents: always open in the wide-screen margin, a pop-up list on narrow screens.
+  const toc = document.querySelector<HTMLElement>('.toc');
+  if (toc) {
+    const details = toc.querySelector('details')!;
+    const list = toc.querySelector<HTMLElement>('.toc-list')!;
+    const wide = matchMedia('(min-width: 1280px)');
+    const sync = () => (details.open = wide.matches);
+    sync();
+    wide.addEventListener('change', sync);
+
+    // In the margin the list can't be closed. On narrow screens it closes after a jump,
+    // on a click elsewhere and on Escape.
+    toc.querySelector('summary')!.addEventListener('click', (event) => {
+      if (wide.matches) event.preventDefault();
+    });
+    list.addEventListener('click', (event) => {
+      if (!wide.matches && (event.target as Element).closest('a')) details.open = false;
+    });
+    document.addEventListener('click', (event) => {
+      if (!wide.matches && details.open && !toc.contains(event.target as Node)) details.open = false;
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !wide.matches && details.open) {
+        details.open = false;
+        toc.querySelector('summary')!.focus();
+      }
+    });
+
+    // Marks the section being read: the last heading near the sticky header's bottom edge
+    // (where a jump puts it), or the last one when the page is scrolled to the end.
+    const header = document.querySelector<HTMLElement>('.site-header');
+    const links = [...list.querySelectorAll<HTMLAnchorElement>('a')];
+    const targets = links.map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))));
+    let current: HTMLAnchorElement | undefined;
+    const update = () => {
+      let active: HTMLAnchorElement | undefined;
+      const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+      const line = (header?.getBoundingClientRect().bottom ?? 110) + 30;
+      targets.forEach((target, i) => {
+        if (target && (atEnd || target.getBoundingClientRect().top < line)) active = links[i];
+      });
+      if (active === current) return;
+      current?.removeAttribute('aria-current');
+      active?.setAttribute('aria-current', 'location');
+      current = active;
+      // Keeps the marked entry visible when the list is taller than its box.
+      if (active && list.scrollHeight > list.clientHeight) {
+        const box = list.getBoundingClientRect();
+        const item = active.getBoundingClientRect();
+        if (item.top < box.top || item.bottom > box.bottom) list.scrollTop += item.top - box.top - box.height / 2;
+      }
+    };
+    let queued = false;
+    addEventListener(
+      'scroll',
+      () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => {
+          queued = false;
+          update();
+        });
+      },
+      { passive: true },
+    );
+    update();
   }
 </script>
 
@@ -116,12 +246,145 @@ const linkParts = (ref: string) => ref.split(/(https?:\/\/\S*[^\s.,;:)])/);
     display: block;
     margin-top: 4px;
   }
+  /* Table of contents. Narrow screens: a "Contents" button in the bottom-right corner opens the list. */
+  .toc {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 20;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .toc summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    list-style: none;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--bg);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.14);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .toc summary::-webkit-details-marker {
+    display: none;
+  }
+  .toc summary:hover {
+    color: var(--ink);
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .toc .toc-list {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    width: min(340px, calc(100vw - 32px));
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px 18px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--bg);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.14);
+  }
+  .toc li {
+    margin-top: 6px;
+  }
+  .toc ol ol {
+    padding-left: 14px;
+    font-size: 14px;
+  }
+  .toc a {
+    display: block;
+    color: var(--ink-soft);
+  }
+  .toc a:hover {
+    color: var(--accent-hover);
+  }
+  /* The section being read. */
+  .toc a[aria-current] {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  /* Wide screens: the list stays in the left margin while the post scrolls, and ends with the article. */
+  @media (min-width: 1280px) {
+    .post {
+      position: relative;
+    }
+    .toc {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -244px;
+      right: auto;
+      width: 220px;
+      z-index: auto;
+      padding-top: 80px;
+    }
+    .toc details {
+      position: sticky;
+      top: 140px;
+    }
+    .toc summary {
+      padding: 0 0 10px;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      cursor: default;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .toc summary svg {
+      display: none;
+    }
+    .toc .toc-list {
+      position: static;
+      width: auto;
+      max-height: calc(100vh - 200px);
+      padding: 0 8px 0 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+    }
+    /* The wide diagrams and tables start right of the list instead of spilling under it. */
+    .has-toc :global(.prose .mi250x-embed),
+    .has-toc :global(.prose .table-figure.wide) {
+      align-self: flex-start;
+      margin-left: -20px;
+      width: min(1120px, calc(50vw + 336px));
+    }
+  }
+  /* On phones the header's links wrap to a second row, so it is taller. */
+  @media (max-width: 560px) {
+    .references h2,
+    .references li {
+      scroll-margin-top: 160px;
+    }
+  }
+  @media print {
+    .toc {
+      display: none;
+    }
+  }
   .references {
     display: flex;
     flex-direction: column;
     gap: 22px;
   }
   .references h2 {
+    scroll-margin-top: 120px;
     margin: 28px 0 0;
     font-size: 30px;
     font-weight: 500;

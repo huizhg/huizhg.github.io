@@ -1,6 +1,6 @@
 ---
-title: "From 19 to 107 TFLOPS: a Triton GEMM on the MI250X"
-description: "I wrote an FP16 matrix multiply in Triton for one MI250X GCD on LUMI, then measured, profiled and tuned it one step at a time until it matched hipBLASLt. Tiles, launch order, autotuning, MFMA instructions, occupancy, and why decode needs a different kernel."
+title: "Writing, Profiling, and Optimizing a Triton GEMM Kernel from Scratch"
+description: "I wanted to understand how to optimize a GEMM kernel on GPU, so I built one in Triton and kept tuning it until it matched hipBLASLt on a single MI250X GCD. These are my notes, written so you can follow along: tiling, launch order, autotuning, MFMA, occupancy, and why decode is a different problem."
 date: 2026-10-07
 tags: [gpu, amd, mi250x, rocm, triton, gemm, lumi, profiling]
 draft: false

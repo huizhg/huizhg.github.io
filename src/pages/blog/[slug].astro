@@ -1,4 +1,5 @@
 ---
+import type { MarkdownHeading } from 'astro';
 import { render } from 'astro:content';
 import PostLayout from '../../layouts/PostLayout.astro';
 import { getPosts, type Post } from '../../lib/posts';
@@ -9,9 +10,24 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props as { post: Post };
-const { Content } = await render(post);
+const { Content, headings: markdownHeadings } = await render(post);
+
+// Astro lists only Markdown headings (## …). A post that writes its sections as HTML,
+// like the survey's <h2 id="section-1">, gets its list from those tags instead.
+const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const decodeEntities = (text: string) =>
+  text.replace(/&(#x[\da-f]+|#\d+|\w+);/gi, (match, code: string) =>
+    code[0] !== '#' ? (entities[code] ?? match) : String.fromCodePoint(parseInt(code.slice(code[1] === 'x' ? 2 : 1), code[1] === 'x' ? 16 : 10)),
+  );
+const htmlHeadings = (body = ''): MarkdownHeading[] =>
+  [...body.matchAll(/<h([23]) id="([^"]+)">(.*?)<\/h\1>/g)].map(([, depth, slug, html]) => ({
+    depth: Number(depth),
+    slug,
+    text: decodeEntities(html.replace(/<[^>]+>/g, '')).trim(),
+  }));
+const headings = markdownHeadings.some((h) => h.depth === 2) ? markdownHeadings : htmlHeadings(post.body);
 ---
 
-<PostLayout post={post}>
+<PostLayout post={post} headings={headings}>
   <Content />
 </PostLayout>

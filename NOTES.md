@@ -56,6 +56,7 @@ You don't need to touch `src/` (the site's code) to add content.
    - Images: save them in the post's folder next to `index.md` and write `![alt text](./figure-1.png "Fig. 1. Caption.")`. The quoted text becomes the caption; leave it out for no caption. Images are resized and compressed automatically.
    - Tables: a Markdown table that is too wide for a phone scrolls sideways inside its own box.
    - References: a URL in a reference becomes a link. Cite one in the text by its number in the list, `[1]` or `[3, 4]`, and each number becomes a link to that reference.
+   - Contents: a post with at least 3 `##` sections gets a table of contents listing every `##` and `###` heading (and References). On wide screens (1280px and up) it stays in the left margin while the post scrolls and marks the section being read; wide diagrams and tables then start right of it. On narrower screens it is a "Contents" button in the bottom-right corner. Add `toc: false` to the frontmatter to hide it. The code is in `src/layouts/PostLayout.astro`.
 4. `draft: true` shows the post only in `npm run dev`. Set `draft: false` and push to `main` to publish. It then appears on the home page (latest 3), the Blog page and in the RSS feed.
 5. When you edit a published post, add or change `updated:`. The post then shows "Updated Oct 2, 2026" after its date. Cards and the order of posts keep using `date`.
 
