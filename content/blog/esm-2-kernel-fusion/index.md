@@ -3,7 +3,7 @@ title: "Profiling ESM-2 "
 description: "I profiled and optimized ESM-2 3B, a protein language model, on one MI250X GCD. Throughput went from 55,907 proteins per GPU-hour in the vanilla version to 167,290 after kernel fusion. This post walks through how I got there, step by step: estimate the ceiling first, read the profiler table and the Perfetto trace, rank fixes by how much time they save, and decide when a hand-written kernel is worth it. It’s based on the log I kept while running the experiments, so you can follow along and learn with me."
 date: 2026-10-14
 tags: [profiling, amd-mi250x, rocm, pytorch, torch-compile, triton, esm-2]
-draft: true
+draft: false
 references:
   - "Lin, Z. et al. Evolutionary-scale prediction of atomic-level protein structure with a language model. Science 2023."
   - "The UniProt Consortium. UniProt: the Universal Protein Knowledgebase in 2023. Nucleic Acids Research 2023."
